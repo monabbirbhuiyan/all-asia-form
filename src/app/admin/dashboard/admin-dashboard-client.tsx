@@ -278,7 +278,7 @@ export default function AdminDashboardClient() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.15),_hsl(var(--background))_35%)]">
+      <div className="min-h-screen flex items-center justify-center bg-[radial-linear(circle_at_top,hsl(var(--primary)/0.15),hsl(var(--background))_35%)]">
         <div className="rounded-2xl border bg-card/80 backdrop-blur px-6 py-4 text-muted-foreground shadow-lg">
           Loading admin portal...
         </div>
@@ -287,7 +287,7 @@ export default function AdminDashboardClient() {
   }
 
   return (
-    <div className="relative min-h-screen bg-[radial-gradient(circle_at_top,_hsl(var(--primary)/0.18),_hsl(var(--background))_42%)]">
+    <div className="relative min-h-screen bg-[radial-linear(circle_at_top,hsl(var(--primary)/0.18),hsl(var(--background))_42%)]">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-primary/15 blur-3xl" />
         <div className="absolute top-40 -right-16 h-80 w-80 rounded-full bg-chart-1/10 blur-3xl" />
@@ -297,7 +297,7 @@ export default function AdminDashboardClient() {
       <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-chart-3 shadow-lg shadow-primary/30">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-chart-3 shadow-lg shadow-primary/30">
               <Shield className="h-5 w-5 text-primary-foreground" />
             </div>
             <div>
@@ -373,7 +373,7 @@ export default function AdminDashboardClient() {
 
         {/* Tabs */}
         <Tabs defaultValue="branch-chiefs" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-sm md:w-fit md:min-w-[560px]">
+          <TabsList className="grid w-full grid-cols-4 rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-sm md:w-fit md:min-w-140">
             <TabsTrigger value="branch-chiefs">Branch Chiefs</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
             <TabsTrigger value="officials">Officials</TabsTrigger>

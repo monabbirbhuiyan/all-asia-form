@@ -46,7 +46,7 @@ export default function BranchLoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/5 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/5 via-background to-accent/5 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
