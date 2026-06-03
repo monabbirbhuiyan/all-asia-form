@@ -77,7 +77,15 @@ export default function HomePage() {
         </div>
 
         <div className="container relative mx-auto px-4 py-14 md:py-16">
-          <div className="mx-auto max-w-4xl text-center">
+          <div className="relative mx-auto max-w-4xl text-center">
+            <img
+              src="/Kanji_Back.png"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute left-1/2 top-1/2 z-0 h-85 w-max -translate-x-1/2 -translate-y-1/2 opacity-10 md:h-auto md:w-auto"
+            />
+
+            <div className="relative z-10">
             <span className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
               Official Registration Portal
             </span>
@@ -118,6 +126,7 @@ export default function HomePage() {
                 <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Format</p>
                 <p className="mt-1 font-semibold">Full Contact Kumite</p>
               </div>
+            </div>
             </div>
           </div>
 
