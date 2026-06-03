@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model AdminCredentials {
+  id            Int     @id @default(autoincrement())
+  email         String  @unique
+  passwordHash  String
+  createdAt     DateTime @default(now())
+
+  @@map("admin_credentials")
+}
+
+model BranchChief {
+  id            Int     @id @default(autoincrement())
+  branchName    String  @unique
+  email         String  @unique
+  passwordHash  String
+  isActive      Boolean @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  fighters      Fighter[]
+  officials     Official[]
+  danTests      DanTest[]
+
+  @@map("branch_chiefs")
+}
+
+model DanTest {
+  id                              Int         @id @default(autoincrement())
+  branchChiefId                   Int
+  branchChief                     BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
+  fullName                        String
+  position                        String?
+  email                           String?
+  phone                           String?
+  blackBelt                       String?
+  dan                             String?
+  internationalRegistrationNumber String?
+  createdAt                       DateTime    @default(now())
+  updatedAt                       DateTime    @updatedAt
+
+  @@map("dan_tests")
+}
+
+model Fighter {
+  id                          Int     @id @default(autoincrement())
+  branchChiefId               Int
+  branchChief                 BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
+  fullName                    String
+  branchChiefName             String?
+  address                     String?
+  height                      Decimal?
+  weight                      Decimal?
+  beltColor                   String?
+  beltRank                    String?
+  internationalRegistrationNumber String? @unique
+  photoUrl                    String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@map("fighters")
+}
+
+model Official {
+  id            Int     @id @default(autoincrement())
+  branchChiefId Int
+  branchChief   BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
+  fullName      String
+  position      String?
+  email         String?
+  phone         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("officials")
+}
