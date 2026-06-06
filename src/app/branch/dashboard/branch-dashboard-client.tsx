@@ -870,7 +870,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="fighters" className="space-y-4">
+        <Tabs defaultValue="branch-chief-details" className="space-y-4">
           <TabsList>
             <TabsTrigger value="branch-chief-details">Branch Chief / Official Dojo Operator</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
