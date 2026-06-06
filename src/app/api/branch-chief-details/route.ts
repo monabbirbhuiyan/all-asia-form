@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { getSession } from '@/lib/auth';
 
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const session = await getSession();
 
@@ -10,60 +10,60 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let danTests;
+    let details;
 
     if (session.role === 'admin') {
-      danTests = await sql`
+      details = await sql`
         SELECT
           d.id,
           d."branchChiefId" AS branch_chief_id,
           d."fullName" AS full_name,
-          d.position,
+          d."operatorRole" AS operator_role,
+          d.address,
+          d."branchChiefCardNumber" AS branch_chief_card_number,
           d.country,
-          d."passportNumber" AS passport_number,
-          d.email,
           d.phone,
-          d."blackBelt" AS black_belt,
-          d.dan,
-          d."trainingSeminar" AS training_seminar,
-          d."internationalRegistrationNumber" AS international_registration_number,
+          d.email,
+          d."photoUrl" AS photo_url,
           d."passportImageUrl" AS passport_image_url,
+          d."internationalRegistrationNumber" AS international_registration_number,
+          d."trainingSeminar" AS training_seminar,
           d."createdAt" AS created_at,
           d."updatedAt" AS updated_at,
           bc."branchName" AS branch_name
-        FROM dan_tests d
+        FROM branch_chief_details d
         JOIN branch_chiefs bc ON d."branchChiefId" = bc.id
         ORDER BY d."createdAt" DESC
       `;
     } else {
-      danTests = await sql`
+      details = await sql`
         SELECT
           d.id,
           d."branchChiefId" AS branch_chief_id,
           d."fullName" AS full_name,
-          d.position,
+          d."operatorRole" AS operator_role,
+          d.address,
+          d."branchChiefCardNumber" AS branch_chief_card_number,
           d.country,
-          d."passportNumber" AS passport_number,
-          d.email,
           d.phone,
-          d."blackBelt" AS black_belt,
-          d.dan,
-          d."trainingSeminar" AS training_seminar,
-          d."internationalRegistrationNumber" AS international_registration_number,
+          d.email,
+          d."photoUrl" AS photo_url,
           d."passportImageUrl" AS passport_image_url,
+          d."internationalRegistrationNumber" AS international_registration_number,
+          d."trainingSeminar" AS training_seminar,
           d."createdAt" AS created_at,
           d."updatedAt" AS updated_at,
           bc."branchName" AS branch_name
-        FROM dan_tests d
+        FROM branch_chief_details d
         JOIN branch_chiefs bc ON d."branchChiefId" = bc.id
         WHERE d."branchChiefId" = ${session.id}
         ORDER BY d."createdAt" DESC
       `;
     }
 
-    return NextResponse.json({ danTests });
+    return NextResponse.json({ details });
   } catch (error) {
-    console.error('Get dan tests error:', error);
+    console.error('Get branch chief details error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -78,16 +78,16 @@ export async function POST(request: NextRequest) {
 
     const {
       fullName,
-      position,
+      operatorRole,
+      address,
+      branchChiefCardNumber,
       country,
-      passportNumber,
-      email,
       phone,
-      blackBelt,
-      dan,
-      trainingSeminar,
-      internationalRegistrationNumber,
+      email,
+      photoDataUrl,
       passportImageDataUrl,
+      internationalRegistrationNumber,
+      trainingSeminar,
     } = await request.json();
 
     if (!fullName) {
@@ -95,57 +95,57 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await sql`
-      INSERT INTO dan_tests (
+      INSERT INTO branch_chief_details (
         "branchChiefId",
         "fullName",
-        position,
+        "operatorRole",
+        address,
+        "branchChiefCardNumber",
         country,
-        "passportNumber",
-        email,
         phone,
-        "blackBelt",
-        dan,
-        "trainingSeminar",
-        "internationalRegistrationNumber",
+        email,
+        "photoUrl",
         "passportImageUrl",
+        "internationalRegistrationNumber",
+        "trainingSeminar",
         "updatedAt"
       )
       VALUES (
         ${session.id},
         ${fullName},
-        ${position},
+        ${operatorRole},
+        ${address},
+        ${branchChiefCardNumber},
         ${country},
-        ${passportNumber},
-        ${email},
         ${phone},
-        ${blackBelt},
-        ${dan},
-        ${trainingSeminar},
-        ${internationalRegistrationNumber},
+        ${email},
+        ${photoDataUrl},
         ${passportImageDataUrl},
+        ${internationalRegistrationNumber},
+        ${trainingSeminar},
         CURRENT_TIMESTAMP
       )
       RETURNING
         id,
         "branchChiefId" AS branch_chief_id,
         "fullName" AS full_name,
-        position,
+        "operatorRole" AS operator_role,
+        address,
+        "branchChiefCardNumber" AS branch_chief_card_number,
         country,
-        "passportNumber" AS passport_number,
-        email,
         phone,
-        "blackBelt" AS black_belt,
-        dan,
-        "trainingSeminar" AS training_seminar,
-        "internationalRegistrationNumber" AS international_registration_number,
+        email,
+        "photoUrl" AS photo_url,
         "passportImageUrl" AS passport_image_url,
+        "internationalRegistrationNumber" AS international_registration_number,
+        "trainingSeminar" AS training_seminar,
         "createdAt" AS created_at,
         "updatedAt" AS updated_at
     `;
 
-    return NextResponse.json({ danTest: result[0] }, { status: 201 });
+    return NextResponse.json({ detail: result[0] }, { status: 201 });
   } catch (error) {
-    console.error('Create dan test error:', error);
+    console.error('Create branch chief details error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

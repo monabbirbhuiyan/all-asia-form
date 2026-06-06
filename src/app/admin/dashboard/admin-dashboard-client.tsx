@@ -52,6 +52,7 @@ interface Fighter {
   belt_rank: string;
   international_registration_number: string;
   photo_url: string;
+  passport_image_url?: string | null;
   branch_name: string;
   created_at: string;
 }
@@ -62,6 +63,8 @@ interface Official {
   position: string;
   email: string;
   phone: string;
+  photo_url?: string | null;
+  passport_image_url?: string | null;
   branch_name: string;
   created_at: string;
 }
@@ -75,6 +78,7 @@ interface DanTest {
   black_belt: string;
   dan: string;
   international_registration_number: string;
+  passport_image_url?: string | null;
   branch_name: string;
   created_at: string;
 }
@@ -627,6 +631,17 @@ export default function AdminDashboardClient() {
                                 </a>
                               </Button>
                             )}
+                            {fighter.passport_image_url && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <a
+                                  href={fighter.passport_image_url}
+                                  download={`fighter-${fighter.id}-passport`}
+                                  aria-label={`Download passport image of ${fighter.full_name}`}
+                                >
+                                  <span className="text-xs">P</span>
+                                </a>
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -705,6 +720,28 @@ export default function AdminDashboardClient() {
                         <TableCell>{official.phone || '-'}</TableCell>
                         <TableCell>{official.branch_name}</TableCell>
                         <TableCell className="text-right">
+                          {official.photo_url && (
+                            <Button variant="ghost" size="sm" asChild>
+                              <a
+                                href={official.photo_url}
+                                download={`official-${official.id}-photo`}
+                                aria-label={`Download photo of ${official.full_name}`}
+                              >
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
+                          {official.passport_image_url && (
+                            <Button variant="ghost" size="sm" asChild>
+                              <a
+                                href={official.passport_image_url}
+                                download={`official-${official.id}-passport`}
+                                aria-label={`Download passport image of ${official.full_name}`}
+                              >
+                                <span className="text-xs">P</span>
+                              </a>
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
@@ -767,6 +804,17 @@ export default function AdminDashboardClient() {
                           <TableCell>{danTest.international_registration_number || '-'}</TableCell>
                           <TableCell>{danTest.branch_name}</TableCell>
                           <TableCell className="text-right">
+                            {danTest.passport_image_url && (
+                              <Button variant="ghost" size="sm" asChild>
+                                <a
+                                  href={danTest.passport_image_url}
+                                  download={`dan-test-${danTest.id}-passport`}
+                                  aria-label={`Download passport image of ${danTest.full_name}`}
+                                >
+                                  <span className="text-xs">P</span>
+                                </a>
+                              </Button>
+                            )}
                             <Button
                               variant="ghost"
                               size="sm"

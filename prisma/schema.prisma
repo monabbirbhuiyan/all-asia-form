@@ -32,6 +32,7 @@ model BranchChief {
   fighters      Fighter[]
   officials     Official[]
   danTests      DanTest[]
+  branchChiefDetails BranchChiefDetail[]
 
   @@map("branch_chiefs")
 }
@@ -42,11 +43,15 @@ model DanTest {
   branchChief                     BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
   fullName                        String
   position                        String?
+  country                         String?
+  passportNumber                  String?
   email                           String?
   phone                           String?
   blackBelt                       String?
   dan                             String?
   internationalRegistrationNumber String?
+  trainingSeminar                 String?
+  passportImageUrl                String?
   createdAt                       DateTime    @default(now())
   updatedAt                       DateTime    @updatedAt
 
@@ -58,14 +63,22 @@ model Fighter {
   branchChiefId               Int
   branchChief                 BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
   fullName                    String
+  phone                       String?
+  email                       String?
+  dateOfBirth                 String?
+  country                     String?
+  passportNumber              String?
   branchChiefName             String?
   address                     String?
   height                      Decimal?
   weight                      Decimal?
   beltColor                   String?
   beltRank                    String?
+  trainingSeminar             String?
   internationalRegistrationNumber String? @unique
+  tournamentHistory           String?
   photoUrl                    String?
+  passportImageUrl            String?
   createdAt                   DateTime @default(now())
   updatedAt                   DateTime @updatedAt
 
@@ -78,10 +91,36 @@ model Official {
   branchChief   BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
   fullName      String
   position      String?
+  country       String?
+  passportNumber String?
+  trainingSeminar String?
   email         String?
   phone         String?
+  photoUrl      String?
+  passportImageUrl String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@map("officials")
+}
+
+model BranchChiefDetail {
+  id                          Int         @id @default(autoincrement())
+  branchChiefId               Int
+  branchChief                 BranchChief @relation(fields: [branchChiefId], references: [id], onDelete: Cascade)
+  fullName                    String
+  operatorRole                String?
+  address                     String?
+  branchChiefCardNumber       String?
+  country                     String?
+  phone                       String?
+  email                       String?
+  photoUrl                    String?
+  passportImageUrl            String?
+  internationalRegistrationNumber String?
+  trainingSeminar             String?
+  createdAt                   DateTime    @default(now())
+  updatedAt                   DateTime    @updatedAt
+
+  @@map("branch_chief_details")
 }

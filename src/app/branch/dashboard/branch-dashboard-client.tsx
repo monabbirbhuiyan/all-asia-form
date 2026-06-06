@@ -49,8 +49,10 @@ interface Fighter {
   weight: number | string | null;
   belt_color: string;
   belt_rank: string;
+  training_seminar?: string | null;
   international_registration_number: string;
   photo_url: string;
+  passport_image_url?: string | null;
   branch_name: string;
   created_at: string;
 }
@@ -59,8 +61,13 @@ interface Official {
   id: number;
   full_name: string;
   position: string;
+  country?: string | null;
+  passport_number?: string | null;
+  training_seminar?: string | null;
   email: string;
   phone: string;
+  photo_url?: string | null;
+  passport_image_url?: string | null;
   branch_name: string;
   created_at: string;
 }
@@ -69,13 +76,39 @@ interface DanTest {
   id: number;
   full_name: string;
   position: string;
+  country?: string | null;
+  passport_number?: string | null;
+  training_seminar?: string | null;
   email: string;
   phone: string;
   black_belt: string;
   dan: string;
   international_registration_number: string;
+  passport_image_url?: string | null;
   branch_name: string;
   created_at: string;
+}
+
+interface BranchChiefDetail {
+  id: number;
+  full_name: string;
+  operator_role?: string | null;
+  address?: string | null;
+  branch_chief_card_number?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  photo_url?: string | null;
+  passport_image_url?: string | null;
+  international_registration_number?: string | null;
+  training_seminar?: string | null;
+  branch_name: string;
+  created_at: string;
+}
+
+interface TournamentEntry {
+  tournamentName: string;
+  achievement: string;
 }
 
 const BELT_COLORS = [
@@ -111,11 +144,14 @@ const BELT_RANKS = [
   '10th Dan',
 ];
 
+const TRAINING_SEMINAR_OPTIONS = ['Yes', 'No'];
+
 export default function BranchDashboardClient({ branchName }: { branchName: string }) {
   const router = useRouter();
   const [fighters, setFighters] = useState<Fighter[]>([]);
   const [officials, setOfficials] = useState<Official[]>([]);
   const [danTests, setDanTests] = useState<DanTest[]>([]);
+  const [branchChiefDetails, setBranchChiefDetails] = useState<BranchChiefDetail[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Fighter form
@@ -123,24 +159,45 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
   const [fighterSubmitting, setFighterSubmitting] = useState(false);
   const [fighterPhoto, setFighterPhoto] = useState<File | null>(null);
   const [fighterPhotoPreview, setFighterPhotoPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fighterPassportImage, setFighterPassportImage] = useState<File | null>(null);
+  const [fighterPassportPreview, setFighterPassportPreview] = useState<string | null>(null);
+  const [tournamentEntries, setTournamentEntries] = useState<TournamentEntry[]>([
+    { tournamentName: '', achievement: '' },
+  ]);
+  const fighterPhotoInputRef = useRef<HTMLInputElement>(null);
+  const fighterPassportInputRef = useRef<HTMLInputElement>(null);
   const [fighterForm, setFighterForm] = useState({
     fullName: '',
+    phone: '',
+    email: '',
+    dateOfBirth: '',
+    country: '',
+    passportNumber: '',
     branchChiefName: '',
     address: '',
     height: '',
     weight: '',
     beltColor: '',
     beltRank: '',
+    trainingSeminar: '',
     internationalRegistrationNumber: '',
   });
 
   // Official form
   const [officialDialogOpen, setOfficialDialogOpen] = useState(false);
   const [officialSubmitting, setOfficialSubmitting] = useState(false);
+  const [officialPhoto, setOfficialPhoto] = useState<File | null>(null);
+  const [officialPhotoPreview, setOfficialPhotoPreview] = useState<string | null>(null);
+  const [officialPassportImage, setOfficialPassportImage] = useState<File | null>(null);
+  const [officialPassportPreview, setOfficialPassportPreview] = useState<string | null>(null);
+  const officialPhotoInputRef = useRef<HTMLInputElement>(null);
+  const officialPassportInputRef = useRef<HTMLInputElement>(null);
   const [officialForm, setOfficialForm] = useState({
     fullName: '',
     position: '',
+    country: '',
+    passportNumber: '',
+    trainingSeminar: '',
     email: '',
     phone: '',
   });
@@ -148,14 +205,41 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
   // Dan test form
   const [danTestDialogOpen, setDanTestDialogOpen] = useState(false);
   const [danTestSubmitting, setDanTestSubmitting] = useState(false);
+  const [danTestPassportImage, setDanTestPassportImage] = useState<File | null>(null);
+  const [danTestPassportPreview, setDanTestPassportPreview] = useState<string | null>(null);
+  const danTestPassportInputRef = useRef<HTMLInputElement>(null);
   const [danTestForm, setDanTestForm] = useState({
     fullName: '',
     position: '',
+    country: '',
+    passportNumber: '',
+    trainingSeminar: '',
     email: '',
     phone: '',
     blackBelt: '',
     dan: '',
     internationalRegistrationNumber: '',
+  });
+
+  // Branch chief details form
+  const [branchChiefDetailDialogOpen, setBranchChiefDetailDialogOpen] = useState(false);
+  const [branchChiefDetailSubmitting, setBranchChiefDetailSubmitting] = useState(false);
+  const [branchChiefDetailPhoto, setBranchChiefDetailPhoto] = useState<File | null>(null);
+  const [branchChiefDetailPhotoPreview, setBranchChiefDetailPhotoPreview] = useState<string | null>(null);
+  const [branchChiefDetailPassportImage, setBranchChiefDetailPassportImage] = useState<File | null>(null);
+  const [branchChiefDetailPassportPreview, setBranchChiefDetailPassportPreview] = useState<string | null>(null);
+  const branchChiefDetailPhotoInputRef = useRef<HTMLInputElement>(null);
+  const branchChiefDetailPassportInputRef = useRef<HTMLInputElement>(null);
+  const [branchChiefDetailForm, setBranchChiefDetailForm] = useState({
+    operatorRole: '',
+    fullName: '',
+    address: '',
+    branchChiefCardNumber: '',
+    country: '',
+    phone: '',
+    email: '',
+    internationalRegistrationNumber: '',
+    trainingSeminar: '',
   });
 
   useEffect(() => {
@@ -165,10 +249,11 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [fightersRes, officialsRes, danTestsRes] = await Promise.all([
+      const [fightersRes, officialsRes, danTestsRes, branchChiefDetailsRes] = await Promise.all([
         fetch('/api/fighters'),
         fetch('/api/officials'),
         fetch('/api/dan-tests'),
+        fetch('/api/branch-chief-details'),
       ]);
 
       if (fightersRes.ok) {
@@ -183,6 +268,10 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         const data = await danTestsRes.json();
         setDanTests(data.danTests);
       }
+      if (branchChiefDetailsRes.ok) {
+        const data = await branchChiefDetailsRes.json();
+        setBranchChiefDetails(data.details);
+      }
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {
@@ -195,53 +284,273 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     router.push('/');
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFighterPhoto(file);
+  const fileToDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFighterPhotoPreview(reader.result as string);
-      };
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('Failed to read file'));
       reader.readAsDataURL(file);
+    });
+  };
+
+  const readImageDimensions = (file: File): Promise<{ width: number; height: number }> => {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const img = new Image();
+
+      img.onload = () => {
+        resolve({ width: img.width, height: img.height });
+        URL.revokeObjectURL(objectUrl);
+      };
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image for dimension validation'));
+        URL.revokeObjectURL(objectUrl);
+      };
+
+      img.src = objectUrl;
+    });
+  };
+
+  const isTwoByTwoPointFiveRatio = (width: number, height: number) => {
+    const expectedRatio = 2 / 2.5;
+    const actualRatio = width / height;
+    return Math.abs(actualRatio - expectedRatio) <= 0.03;
+  };
+
+  const handleFighterPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const { width, height } = await readImageDimensions(file);
+      if (!isTwoByTwoPointFiveRatio(width, height)) {
+        alert('Fighter photo must be in 2:2.5 ratio (2-inch width x 2.5-inch height).');
+        if (fighterPhotoInputRef.current) {
+          fighterPhotoInputRef.current.value = '';
+        }
+        return;
+      }
+
+      setFighterPhoto(file);
+      const dataUrl = await fileToDataUrl(file);
+      setFighterPhotoPreview(dataUrl);
+    } catch (error) {
+      console.error('Fighter photo validation failed:', error);
+      alert('Failed to process photo. Please try another image.');
     }
+  };
+
+  const handleFighterPassportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setFighterPassportImage(file);
+    const dataUrl = await fileToDataUrl(file);
+    setFighterPassportPreview(dataUrl);
+  };
+
+  const handleOfficialPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setOfficialPhoto(file);
+    const dataUrl = await fileToDataUrl(file);
+    setOfficialPhotoPreview(dataUrl);
+  };
+
+  const handleOfficialPassportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setOfficialPassportImage(file);
+    const dataUrl = await fileToDataUrl(file);
+    setOfficialPassportPreview(dataUrl);
+  };
+
+  const handleDanTestPassportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setDanTestPassportImage(file);
+    const dataUrl = await fileToDataUrl(file);
+    setDanTestPassportPreview(dataUrl);
+  };
+
+  const handleBranchChiefDetailPhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBranchChiefDetailPhoto(file);
+    const dataUrl = await fileToDataUrl(file);
+    setBranchChiefDetailPhotoPreview(dataUrl);
+  };
+
+  const handleBranchChiefDetailPassportChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setBranchChiefDetailPassportImage(file);
+    const dataUrl = await fileToDataUrl(file);
+    setBranchChiefDetailPassportPreview(dataUrl);
   };
 
   const resetFighterForm = () => {
     setFighterForm({
       fullName: '',
+      phone: '',
+      email: '',
+      dateOfBirth: '',
+      country: '',
+      passportNumber: '',
       branchChiefName: '',
       address: '',
       height: '',
       weight: '',
       beltColor: '',
       beltRank: '',
+      trainingSeminar: '',
       internationalRegistrationNumber: '',
     });
+    setTournamentEntries([{ tournamentName: '', achievement: '' }]);
     setFighterPhoto(null);
     setFighterPhotoPreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    setFighterPassportImage(null);
+    setFighterPassportPreview(null);
+    if (fighterPhotoInputRef.current) {
+      fighterPhotoInputRef.current.value = '';
     }
+    if (fighterPassportInputRef.current) {
+      fighterPassportInputRef.current.value = '';
+    }
+  };
+
+  const resetOfficialForm = () => {
+    setOfficialForm({
+      fullName: '',
+      position: '',
+      country: '',
+      passportNumber: '',
+      trainingSeminar: '',
+      email: '',
+      phone: '',
+    });
+    setOfficialPhoto(null);
+    setOfficialPhotoPreview(null);
+    setOfficialPassportImage(null);
+    setOfficialPassportPreview(null);
+    if (officialPhotoInputRef.current) {
+      officialPhotoInputRef.current.value = '';
+    }
+    if (officialPassportInputRef.current) {
+      officialPassportInputRef.current.value = '';
+    }
+  };
+
+  const resetDanTestForm = () => {
+    setDanTestForm({
+      fullName: '',
+      position: '',
+      country: '',
+      passportNumber: '',
+      trainingSeminar: '',
+      email: '',
+      phone: '',
+      blackBelt: '',
+      dan: '',
+      internationalRegistrationNumber: '',
+    });
+    setDanTestPassportImage(null);
+    setDanTestPassportPreview(null);
+    if (danTestPassportInputRef.current) {
+      danTestPassportInputRef.current.value = '';
+    }
+  };
+
+  const resetBranchChiefDetailForm = () => {
+    setBranchChiefDetailForm({
+      operatorRole: '',
+      fullName: '',
+      address: '',
+      branchChiefCardNumber: '',
+      country: '',
+      phone: '',
+      email: '',
+      internationalRegistrationNumber: '',
+      trainingSeminar: '',
+    });
+    setBranchChiefDetailPhoto(null);
+    setBranchChiefDetailPhotoPreview(null);
+    setBranchChiefDetailPassportImage(null);
+    setBranchChiefDetailPassportPreview(null);
+    if (branchChiefDetailPhotoInputRef.current) {
+      branchChiefDetailPhotoInputRef.current.value = '';
+    }
+    if (branchChiefDetailPassportInputRef.current) {
+      branchChiefDetailPassportInputRef.current.value = '';
+    }
+  };
+
+  const addTournamentEntry = () => {
+    setTournamentEntries((prev) => [...prev, { tournamentName: '', achievement: '' }]);
+  };
+
+  const removeTournamentEntry = (index: number) => {
+    setTournamentEntries((prev) => {
+      if (prev.length === 1) {
+        return [{ tournamentName: '', achievement: '' }];
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const updateTournamentEntry = (
+    index: number,
+    field: keyof TournamentEntry,
+    value: string
+  ) => {
+    setTournamentEntries((prev) =>
+      prev.map((entry, i) => (i === index ? { ...entry, [field]: value } : entry))
+    );
   };
 
   const handleSubmitFighter = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const hasInvalidTournamentEntry = tournamentEntries.some(
+      (entry) => !entry.tournamentName.trim() || !entry.achievement.trim()
+    );
+
+    if (hasInvalidTournamentEntry) {
+      alert('Please complete all tournament cards. If there is no achievement, write N/A.');
+      return;
+    }
+
     setFighterSubmitting(true);
 
     try {
       const formData = new FormData();
       formData.append('fullName', fighterForm.fullName);
+      formData.append('phone', fighterForm.phone);
+      formData.append('email', fighterForm.email);
+      formData.append('dateOfBirth', fighterForm.dateOfBirth);
+      formData.append('country', fighterForm.country);
+      formData.append('passportNumber', fighterForm.passportNumber);
       formData.append('branchChiefName', fighterForm.branchChiefName);
       formData.append('address', fighterForm.address);
       formData.append('height', fighterForm.height);
       formData.append('weight', fighterForm.weight);
       formData.append('beltColor', fighterForm.beltColor);
       formData.append('beltRank', fighterForm.beltRank);
+      formData.append('trainingSeminar', fighterForm.trainingSeminar);
       formData.append('internationalRegistrationNumber', fighterForm.internationalRegistrationNumber);
+      formData.append('tournamentHistory', JSON.stringify(tournamentEntries));
       
       if (fighterPhoto) {
         formData.append('photo', fighterPhoto);
+      }
+      if (fighterPassportImage) {
+        formData.append('passportImage', fighterPassportImage);
       }
 
       const res = await fetch('/api/fighters', {
@@ -270,14 +579,21 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     setOfficialSubmitting(true);
 
     try {
+      const photoDataUrl = officialPhoto ? await fileToDataUrl(officialPhoto) : null;
+      const passportImageDataUrl = officialPassportImage ? await fileToDataUrl(officialPassportImage) : null;
+
       const res = await fetch('/api/officials', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(officialForm),
+        body: JSON.stringify({
+          ...officialForm,
+          photoDataUrl,
+          passportImageDataUrl,
+        }),
       });
 
       if (res.ok) {
-        setOfficialForm({ fullName: '', position: '', email: '', phone: '' });
+        resetOfficialForm();
         setOfficialDialogOpen(false);
         fetchData();
       } else {
@@ -297,22 +613,19 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     setDanTestSubmitting(true);
 
     try {
+      const passportImageDataUrl = danTestPassportImage ? await fileToDataUrl(danTestPassportImage) : null;
+
       const res = await fetch('/api/dan-tests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(danTestForm),
+        body: JSON.stringify({
+          ...danTestForm,
+          passportImageDataUrl,
+        }),
       });
 
       if (res.ok) {
-        setDanTestForm({
-          fullName: '',
-          position: '',
-          email: '',
-          phone: '',
-          blackBelt: '',
-          dan: '',
-          internationalRegistrationNumber: '',
-        });
+        resetDanTestForm();
         setDanTestDialogOpen(false);
         fetchData();
       } else {
@@ -324,6 +637,40 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       alert('Failed to register dan test');
     } finally {
       setDanTestSubmitting(false);
+    }
+  };
+
+  const handleSubmitBranchChiefDetail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBranchChiefDetailSubmitting(true);
+
+    try {
+      const photoDataUrl = branchChiefDetailPhoto ? await fileToDataUrl(branchChiefDetailPhoto) : null;
+      const passportImageDataUrl = branchChiefDetailPassportImage ? await fileToDataUrl(branchChiefDetailPassportImage) : null;
+
+      const res = await fetch('/api/branch-chief-details', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...branchChiefDetailForm,
+          photoDataUrl,
+          passportImageDataUrl,
+        }),
+      });
+
+      if (res.ok) {
+        resetBranchChiefDetailForm();
+        setBranchChiefDetailDialogOpen(false);
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to submit branch chief/dojo operator details');
+      }
+    } catch (error) {
+      console.error('Submit branch chief details error:', error);
+      alert('Failed to submit branch chief/dojo operator details');
+    } finally {
+      setBranchChiefDetailSubmitting(false);
     }
   };
 
@@ -375,6 +722,19 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     }
   };
 
+  const handleDeleteBranchChiefDetail = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this entry?')) return;
+
+    try {
+      const res = await fetch(`/api/branch-chief-details/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Delete branch chief details error:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -394,7 +754,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
             </div>
             <div>
               <h1 className="font-bold text-lg text-foreground">{branchName}</h1>
-              <p className="text-xs text-muted-foreground">Branch Chief Portal</p>
+              <p className="text-xs text-muted-foreground">Branch Chief/Dojo Operator Portal</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -442,9 +802,10 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         {/* Tabs */}
         <Tabs defaultValue="fighters" className="space-y-4">
           <TabsList>
+            <TabsTrigger value="branch-chief-details">Branch Chief / Dojo Operator</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
             <TabsTrigger value="officials">Officials</TabsTrigger>
-            <TabsTrigger value="dan-tests">Dan Test</TabsTrigger>
+            <TabsTrigger value="dan-tests">Dan Test</TabsTrigger>            
           </TabsList>
 
           {/* Fighters Tab */}
@@ -465,7 +826,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                       Register Fighter
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                  <DialogContent className="w-[98vw] sm:max-w-6xl! max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Register New Fighter</DialogTitle>
                       <DialogDescription>
@@ -490,24 +851,60 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           </div>
                           <div className="flex-1">
                             <input
-                              ref={fileInputRef}
+                              ref={fighterPhotoInputRef}
                               type="file"
                               accept="image/*"
-                              onChange={handlePhotoChange}
+                              onChange={handleFighterPhotoChange}
                               className="hidden"
                               id="photo-upload"
                             />
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={() => fileInputRef.current?.click()}
+                              onClick={() => fighterPhotoInputRef.current?.click()}
                             >
                               <Upload className="mr-2 h-4 w-4" />
                               Upload Photo
                             </Button>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Upload a passport-size photo (JPEG, PNG)
+                              Upload a passport-size photo (JPEG, PNG) with 2:2.5 ratio (2-inch width x 2.5-inch height)
                             </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Passport Image Upload */}
+                      <div className="space-y-2">
+                        <Label>Passport Image</Label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
+                            {fighterPassportPreview ? (
+                              <img
+                                src={fighterPassportPreview}
+                                alt="Passport preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              ref={fighterPassportInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFighterPassportChange}
+                              className="hidden"
+                              id="fighter-passport-upload"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => fighterPassportInputRef.current?.click()}
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Passport Image
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -522,6 +919,60 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           onChange={(e) => setFighterForm({ ...fighterForm, fullName: e.target.value })}
                           required
                         />
+                      </div>
+
+                      {/* Phone, Email, Date of Birth, Country & Passport */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fighterPhone">Phone</Label>
+                          <Input
+                            id="fighterPhone"
+                            type="tel"
+                            placeholder="Enter phone number"
+                            value={fighterForm.phone}
+                            onChange={(e) => setFighterForm({ ...fighterForm, phone: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fighterEmail">Email</Label>
+                          <Input
+                            id="fighterEmail"
+                            type="email"
+                            placeholder="Enter email"
+                            value={fighterForm.email}
+                            onChange={(e) => setFighterForm({ ...fighterForm, email: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fighterDob">Date of Birth</Label>
+                          <Input
+                            id="fighterDob"
+                            type="date"
+                            value={fighterForm.dateOfBirth}
+                            onChange={(e) => setFighterForm({ ...fighterForm, dateOfBirth: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="fighterCountry">Country</Label>
+                          <Input
+                            id="fighterCountry"
+                            placeholder="Enter country"
+                            value={fighterForm.country}
+                            onChange={(e) => setFighterForm({ ...fighterForm, country: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="fighterPassportNumber">Passport Number</Label>
+                          <Input
+                            id="fighterPassportNumber"
+                            placeholder="Enter passport number"
+                            value={fighterForm.passportNumber}
+                            onChange={(e) => setFighterForm({ ...fighterForm, passportNumber: e.target.value })}
+                          />
+                        </div>
                       </div>
 
                       {/* Branch Chief Name */}
@@ -575,6 +1026,25 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                         </div>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Training Seminar Participation</Label>
+                        <Select
+                          value={fighterForm.trainingSeminar}
+                          onValueChange={(value) => setFighterForm({ ...fighterForm, trainingSeminar: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Will participate or not" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TRAINING_SEMINAR_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       {/* Belt Color & Rank */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -624,6 +1094,68 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           value={fighterForm.internationalRegistrationNumber}
                           onChange={(e) => setFighterForm({ ...fighterForm, internationalRegistrationNumber: e.target.value })}
                         />
+                      </div>
+
+                      {/* Tournament History */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <Label>Tournament History</Label>
+                          <Button type="button" variant="outline" size="sm" onClick={addTournamentEntry}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add Tournament
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Achievement is required. If none, write N/A.
+                        </p>
+
+                        <div className="space-y-3">
+                          {tournamentEntries.map((entry, index) => (
+                            <Card key={`tournament-${index}`}>
+                              <CardContent className="pt-4 space-y-4">
+                                <div className="flex items-start justify-between gap-3">
+                                  <p className="text-sm font-medium">Tournament {index + 1}</p>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeTournamentEntry(index)}
+                                    className="text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`tournamentName-${index}`}>Tournament Name *</Label>
+                                    <Input
+                                      id={`tournamentName-${index}`}
+                                      placeholder="e.g., National Kyokushin Open 2025"
+                                      value={entry.tournamentName}
+                                      onChange={(e) =>
+                                        updateTournamentEntry(index, 'tournamentName', e.target.value)
+                                      }
+                                      required
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor={`achievement-${index}`}>Achievement *</Label>
+                                    <Input
+                                      id={`achievement-${index}`}
+                                      placeholder="e.g., Gold Medal or N/A"
+                                      value={entry.achievement}
+                                      onChange={(e) =>
+                                        updateTournamentEntry(index, 'achievement', e.target.value)
+                                      }
+                                      required
+                                    />
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
                       </div>
 
                       <Button type="submit" className="w-full" disabled={fighterSubmitting}>
@@ -708,7 +1240,13 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                   <CardTitle>My Officials</CardTitle>
                   <CardDescription>Register officials for the championship</CardDescription>
                 </div>
-                <Dialog open={officialDialogOpen} onOpenChange={setOfficialDialogOpen}>
+                <Dialog
+                  open={officialDialogOpen}
+                  onOpenChange={(open) => {
+                    setOfficialDialogOpen(open);
+                    if (!open) resetOfficialForm();
+                  }}
+                >
                   <DialogTrigger asChild>
                     <Button size="sm">
                       <Plus className="mr-2 h-4 w-4" />
@@ -723,6 +1261,78 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmitOfficial} className="space-y-4">
+                      {/* Official Photo Upload */}
+                      <div className="space-y-2">
+                        <Label>Photo</Label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-32 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
+                            {officialPhotoPreview ? (
+                              <img
+                                src={officialPhotoPreview}
+                                alt="Official photo preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-10 w-10 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              ref={officialPhotoInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleOfficialPhotoChange}
+                              className="hidden"
+                              id="official-photo-upload"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => officialPhotoInputRef.current?.click()}
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Photo
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Official Passport Upload */}
+                      <div className="space-y-2">
+                        <Label>Passport Image</Label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
+                            {officialPassportPreview ? (
+                              <img
+                                src={officialPassportPreview}
+                                alt="Official passport preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              ref={officialPassportInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleOfficialPassportChange}
+                              className="hidden"
+                              id="official-passport-upload"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => officialPassportInputRef.current?.click()}
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Passport Image
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="officialName">Full Name *</Label>
                         <Input
@@ -744,6 +1354,27 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                         />
                       </div>
 
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="officialCountry">Country</Label>
+                          <Input
+                            id="officialCountry"
+                            placeholder="Enter country"
+                            value={officialForm.country}
+                            onChange={(e) => setOfficialForm({ ...officialForm, country: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="officialPassportNumber">Passport Number</Label>
+                          <Input
+                            id="officialPassportNumber"
+                            placeholder="Enter passport number"
+                            value={officialForm.passportNumber}
+                            onChange={(e) => setOfficialForm({ ...officialForm, passportNumber: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="officialEmail">Email</Label>
                         <Input
@@ -763,6 +1394,25 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           value={officialForm.phone}
                           onChange={(e) => setOfficialForm({ ...officialForm, phone: e.target.value })}
                         />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Training Seminar Participation</Label>
+                        <Select
+                          value={officialForm.trainingSeminar}
+                          onValueChange={(value) => setOfficialForm({ ...officialForm, trainingSeminar: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Will participate or not" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TRAINING_SEMINAR_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       <Button type="submit" className="w-full" disabled={officialSubmitting}>
@@ -823,7 +1473,13 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                   <CardTitle>My Dan Test Candidates</CardTitle>
                   <CardDescription>Register dan test candidates for the championship</CardDescription>
                 </div>
-                <Dialog open={danTestDialogOpen} onOpenChange={setDanTestDialogOpen}>
+                <Dialog
+                  open={danTestDialogOpen}
+                  onOpenChange={(open) => {
+                    setDanTestDialogOpen(open);
+                    if (!open) resetDanTestForm();
+                  }}
+                >
                   <DialogTrigger asChild>
                     <Button size="sm">
                       <Plus className="mr-2 h-4 w-4" />
@@ -838,6 +1494,42 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSubmitDanTest} className="space-y-4">
+                      {/* Passport Upload */}
+                      <div className="space-y-2">
+                        <Label>Passport Image</Label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
+                            {danTestPassportPreview ? (
+                              <img
+                                src={danTestPassportPreview}
+                                alt="Dan test passport preview"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              ref={danTestPassportInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleDanTestPassportChange}
+                              className="hidden"
+                              id="dan-passport-upload"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => danTestPassportInputRef.current?.click()}
+                            >
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Passport Image
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
                       <div className="space-y-2">
                         <Label htmlFor="danTestName">Full Name *</Label>
                         <Input
@@ -857,6 +1549,27 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           value={danTestForm.position}
                           onChange={(e) => setDanTestForm({ ...danTestForm, position: e.target.value })}
                         />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="danTestCountry">Country</Label>
+                          <Input
+                            id="danTestCountry"
+                            placeholder="Enter country"
+                            value={danTestForm.country}
+                            onChange={(e) => setDanTestForm({ ...danTestForm, country: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="danTestPassportNumber">Passport Number</Label>
+                          <Input
+                            id="danTestPassportNumber"
+                            placeholder="Enter passport number"
+                            value={danTestForm.passportNumber}
+                            onChange={(e) => setDanTestForm({ ...danTestForm, passportNumber: e.target.value })}
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
@@ -911,6 +1624,25 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                         />
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Training Seminar Participation</Label>
+                        <Select
+                          value={danTestForm.trainingSeminar}
+                          onValueChange={(value) => setDanTestForm({ ...danTestForm, trainingSeminar: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Will participate or not" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TRAINING_SEMINAR_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <Button type="submit" className="w-full" disabled={danTestSubmitting}>
                         {danTestSubmitting ? 'Registering...' : 'Register Dan Test'}
                       </Button>
@@ -954,6 +1686,246 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                       <TableRow>
                         <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           No dan test registrations yet. Click &quot;Register Dan Test&quot; to add the first one.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Branch Chief / Dojo Operator Tab */}
+          <TabsContent value="branch-chief-details">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle>Branch Chief / Dojo Operator</CardTitle>
+                  <CardDescription>Submit branch chief or dojo operator details</CardDescription>
+                </div>
+                <Dialog
+                  open={branchChiefDetailDialogOpen}
+                  onOpenChange={(open) => {
+                    setBranchChiefDetailDialogOpen(open);
+                    if (!open) resetBranchChiefDetailForm();
+                  }}
+                >
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Details
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Branch Chief / Dojo Operator Details</DialogTitle>
+                      <DialogDescription>
+                        Fill in the profile and document details.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleSubmitBranchChiefDetail} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Role *</Label>
+                        <Select
+                          value={branchChiefDetailForm.operatorRole}
+                          onValueChange={(value) => setBranchChiefDetailForm({ ...branchChiefDetailForm, operatorRole: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Branch Chief">Branch Chief</SelectItem>
+                            <SelectItem value="Dojo Operator">Dojo Operator</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Photo Upload</Label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-32 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
+                            {branchChiefDetailPhotoPreview ? (
+                              <img src={branchChiefDetailPhotoPreview} alt="Profile preview" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="h-10 w-10 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              ref={branchChiefDetailPhotoInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleBranchChiefDetailPhotoChange}
+                              className="hidden"
+                              id="branch-chief-detail-photo"
+                            />
+                            <Button type="button" variant="outline" onClick={() => branchChiefDetailPhotoInputRef.current?.click()}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Photo
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Passport Upload</Label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-24 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
+                            {branchChiefDetailPassportPreview ? (
+                              <img src={branchChiefDetailPassportPreview} alt="Passport preview" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="h-8 w-8 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <input
+                              ref={branchChiefDetailPassportInputRef}
+                              type="file"
+                              accept="image/*"
+                              onChange={handleBranchChiefDetailPassportChange}
+                              className="hidden"
+                              id="branch-chief-detail-passport"
+                            />
+                            <Button type="button" variant="outline" onClick={() => branchChiefDetailPassportInputRef.current?.click()}>
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Passport
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="branchChiefDetailName">Name *</Label>
+                        <Input
+                          id="branchChiefDetailName"
+                          value={branchChiefDetailForm.fullName}
+                          onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, fullName: e.target.value })}
+                          required
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="branchChiefDetailAddress">Address</Label>
+                        <Textarea
+                          id="branchChiefDetailAddress"
+                          value={branchChiefDetailForm.address}
+                          onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, address: e.target.value })}
+                          rows={2}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="branchChiefCardNo">Branch Chief Card Number</Label>
+                          <Input
+                            id="branchChiefCardNo"
+                            value={branchChiefDetailForm.branchChiefCardNumber}
+                            onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, branchChiefCardNumber: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="branchChiefIntlReg">International Reg Number</Label>
+                          <Input
+                            id="branchChiefIntlReg"
+                            value={branchChiefDetailForm.internationalRegistrationNumber}
+                            onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, internationalRegistrationNumber: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="branchChiefCountry">Country</Label>
+                          <Input
+                            id="branchChiefCountry"
+                            value={branchChiefDetailForm.country}
+                            onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, country: e.target.value })}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="branchChiefPhone">Phone</Label>
+                          <Input
+                            id="branchChiefPhone"
+                            value={branchChiefDetailForm.phone}
+                            onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, phone: e.target.value })}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="branchChiefEmail">Email</Label>
+                        <Input
+                          id="branchChiefEmail"
+                          type="email"
+                          value={branchChiefDetailForm.email}
+                          onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, email: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Training Seminar Participation</Label>
+                        <Select
+                          value={branchChiefDetailForm.trainingSeminar}
+                          onValueChange={(value) => setBranchChiefDetailForm({ ...branchChiefDetailForm, trainingSeminar: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Will participate or not" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {TRAINING_SEMINAR_OPTIONS.map((option) => (
+                              <SelectItem key={option} value={option}>
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button type="submit" className="w-full" disabled={branchChiefDetailSubmitting}>
+                        {branchChiefDetailSubmitting ? 'Submitting...' : 'Submit Details'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Country</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Training Seminar</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {branchChiefDetails.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>{entry.operator_role || '-'}</TableCell>
+                        <TableCell className="font-medium">{entry.full_name}</TableCell>
+                        <TableCell>{entry.country || '-'}</TableCell>
+                        <TableCell>{entry.phone || '-'}</TableCell>
+                        <TableCell>{entry.email || '-'}</TableCell>
+                        <TableCell>{entry.training_seminar || '-'}</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteBranchChiefDetail(entry.id)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {branchChiefDetails.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                          No entries yet. Click &quot;Add Details&quot; to submit one.
                         </TableCell>
                       </TableRow>
                     )}

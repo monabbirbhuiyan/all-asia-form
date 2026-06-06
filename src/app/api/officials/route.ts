@@ -19,8 +19,13 @@ export async function GET(request: NextRequest) {
           o."branchChiefId" AS branch_chief_id,
           o."fullName" AS full_name,
           o.position,
+          o.country,
+          o."passportNumber" AS passport_number,
+          o."trainingSeminar" AS training_seminar,
           o.email,
           o.phone,
+          o."photoUrl" AS photo_url,
+          o."passportImageUrl" AS passport_image_url,
           o."createdAt" AS created_at,
           o."updatedAt" AS updated_at,
           bc."branchName" AS branch_name
@@ -35,8 +40,13 @@ export async function GET(request: NextRequest) {
           o."branchChiefId" AS branch_chief_id,
           o."fullName" AS full_name,
           o.position,
+          o.country,
+          o."passportNumber" AS passport_number,
+          o."trainingSeminar" AS training_seminar,
           o.email,
           o.phone,
+          o."photoUrl" AS photo_url,
+          o."passportImageUrl" AS passport_image_url,
           o."createdAt" AS created_at,
           o."updatedAt" AS updated_at,
           bc."branchName" AS branch_name
@@ -65,7 +75,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { fullName, position, email, phone } = await request.json();
+    const {
+      fullName,
+      position,
+      country,
+      passportNumber,
+      trainingSeminar,
+      email,
+      phone,
+      photoDataUrl,
+      passportImageDataUrl,
+    } = await request.json();
 
     if (!fullName) {
       return NextResponse.json(
@@ -75,15 +95,24 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await sql`
-      INSERT INTO officials ("branchChiefId", "fullName", position, email, phone, "updatedAt")
-      VALUES (${session.id}, ${fullName}, ${position}, ${email}, ${phone}, CURRENT_TIMESTAMP)
+      INSERT INTO officials (
+        "branchChiefId", "fullName", position, country, "passportNumber", "trainingSeminar", email, phone, "photoUrl", "passportImageUrl", "updatedAt"
+      )
+      VALUES (
+        ${session.id}, ${fullName}, ${position}, ${country}, ${passportNumber}, ${trainingSeminar}, ${email}, ${phone}, ${photoDataUrl}, ${passportImageDataUrl}, CURRENT_TIMESTAMP
+      )
       RETURNING
         id,
         "branchChiefId" AS branch_chief_id,
         "fullName" AS full_name,
         position,
+        country,
+        "passportNumber" AS passport_number,
+        "trainingSeminar" AS training_seminar,
         email,
         phone,
+        "photoUrl" AS photo_url,
+        "passportImageUrl" AS passport_image_url,
         "createdAt" AS created_at,
         "updatedAt" AS updated_at
     `;
