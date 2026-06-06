@@ -75,6 +75,8 @@ model Fighter {
   beltColor                   String?
   beltRank                    String?
   trainingSeminar             String?
+  danTestParticipation        String?
+  danTestQualificationNumber  String?
   internationalRegistrationNumber String? @unique
   tournamentHistory           String?
   photoUrl                    String?
@@ -119,6 +121,8 @@ model BranchChiefDetail {
   passportImageUrl            String?
   internationalRegistrationNumber String?
   trainingSeminar             String?
+  danTestParticipation        String?
+  danTestQualificationNumber  String?
   createdAt                   DateTime    @default(now())
   updatedAt                   DateTime    @updatedAt
 

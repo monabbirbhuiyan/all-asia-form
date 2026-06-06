@@ -30,6 +30,8 @@ export async function GET(request: NextRequest) {
           f."beltColor" AS belt_color,
           f."beltRank" AS belt_rank,
           f."trainingSeminar" AS training_seminar,
+          f."danTestParticipation" AS dan_test_participation,
+          f."danTestQualificationNumber" AS dan_test_qualification_number,
           f."internationalRegistrationNumber" AS international_registration_number,
           f."tournamentHistory" AS tournament_history,
           f."photoUrl" AS photo_url,
@@ -59,6 +61,8 @@ export async function GET(request: NextRequest) {
           f."beltColor" AS belt_color,
           f."beltRank" AS belt_rank,
           f."trainingSeminar" AS training_seminar,
+          f."danTestParticipation" AS dan_test_participation,
+          f."danTestQualificationNumber" AS dan_test_qualification_number,
           f."internationalRegistrationNumber" AS international_registration_number,
           f."tournamentHistory" AS tournament_history,
           f."photoUrl" AS photo_url,
@@ -114,6 +118,8 @@ export async function POST(request: NextRequest) {
     const beltColor = formData.get('beltColor') as string;
     const beltRank = formData.get('beltRank') as string;
     const trainingSeminar = (formData.get('trainingSeminar') as string)?.trim() || null;
+    const danTestParticipation = (formData.get('danTestParticipation') as string)?.trim() || null;
+    const danTestQualificationNumber = (formData.get('danTestQualificationNumber') as string)?.trim() || null;
     const internationalRegistrationNumber = formData.get('internationalRegistrationNumber') as string;
     const tournamentHistory = (formData.get('tournamentHistory') as string)?.trim() || null;
     const photo = formData.get('photo') as File | null;
@@ -162,11 +168,11 @@ export async function POST(request: NextRequest) {
     const result = await sql`
       INSERT INTO fighters (
         "branchChiefId", "fullName", phone, email, "dateOfBirth", country, "passportNumber", "branchChiefName", address, height, weight,
-        "beltColor", "beltRank", "trainingSeminar", "internationalRegistrationNumber", "tournamentHistory", "photoUrl", "passportImageUrl", "updatedAt"
+        "beltColor", "beltRank", "trainingSeminar", "danTestParticipation", "danTestQualificationNumber", "internationalRegistrationNumber", "tournamentHistory", "photoUrl", "passportImageUrl", "updatedAt"
       )
       VALUES (
         ${session.id}, ${fullName}, ${phone}, ${email}, ${dateOfBirth}, ${country}, ${passportNumber}, ${branchChiefName}, ${address}, ${height}, ${weight},
-        ${beltColor}, ${beltRank}, ${trainingSeminar}, ${internationalRegistrationNumber}, ${tournamentHistory}, ${photoUrl}, ${passportImageUrl}, CURRENT_TIMESTAMP
+        ${beltColor}, ${beltRank}, ${trainingSeminar}, ${danTestParticipation}, ${danTestQualificationNumber}, ${internationalRegistrationNumber}, ${tournamentHistory}, ${photoUrl}, ${passportImageUrl}, CURRENT_TIMESTAMP
       )
       RETURNING
         id,
@@ -184,6 +190,8 @@ export async function POST(request: NextRequest) {
         "beltColor" AS belt_color,
         "beltRank" AS belt_rank,
         "trainingSeminar" AS training_seminar,
+        "danTestParticipation" AS dan_test_participation,
+        "danTestQualificationNumber" AS dan_test_qualification_number,
         "internationalRegistrationNumber" AS international_registration_number,
         "tournamentHistory" AS tournament_history,
         "photoUrl" AS photo_url,

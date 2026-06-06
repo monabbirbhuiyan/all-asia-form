@@ -28,6 +28,8 @@ export async function GET() {
           d."passportImageUrl" AS passport_image_url,
           d."internationalRegistrationNumber" AS international_registration_number,
           d."trainingSeminar" AS training_seminar,
+          d."danTestParticipation" AS dan_test_participation,
+          d."danTestQualificationNumber" AS dan_test_qualification_number,
           d."createdAt" AS created_at,
           d."updatedAt" AS updated_at,
           bc."branchName" AS branch_name
@@ -51,6 +53,8 @@ export async function GET() {
           d."passportImageUrl" AS passport_image_url,
           d."internationalRegistrationNumber" AS international_registration_number,
           d."trainingSeminar" AS training_seminar,
+          d."danTestParticipation" AS dan_test_participation,
+          d."danTestQualificationNumber" AS dan_test_qualification_number,
           d."createdAt" AS created_at,
           d."updatedAt" AS updated_at,
           bc."branchName" AS branch_name
@@ -88,6 +92,8 @@ export async function POST(request: NextRequest) {
       passportImageDataUrl,
       internationalRegistrationNumber,
       trainingSeminar,
+      danTestParticipation,
+      danTestQualificationNumber,
     } = await request.json();
 
     if (!fullName) {
@@ -108,6 +114,8 @@ export async function POST(request: NextRequest) {
         "passportImageUrl",
         "internationalRegistrationNumber",
         "trainingSeminar",
+        "danTestParticipation",
+        "danTestQualificationNumber",
         "updatedAt"
       )
       VALUES (
@@ -123,6 +131,8 @@ export async function POST(request: NextRequest) {
         ${passportImageDataUrl},
         ${internationalRegistrationNumber},
         ${trainingSeminar},
+        ${danTestParticipation},
+        ${danTestQualificationNumber},
         CURRENT_TIMESTAMP
       )
       RETURNING
@@ -139,6 +149,8 @@ export async function POST(request: NextRequest) {
         "passportImageUrl" AS passport_image_url,
         "internationalRegistrationNumber" AS international_registration_number,
         "trainingSeminar" AS training_seminar,
+        "danTestParticipation" AS dan_test_participation,
+        "danTestQualificationNumber" AS dan_test_qualification_number,
         "createdAt" AS created_at,
         "updatedAt" AS updated_at
     `;

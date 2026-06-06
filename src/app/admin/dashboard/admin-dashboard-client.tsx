@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Users, Shield, Award, Download, Plus, LogOut, 
-  Trash2, ToggleLeft, ToggleRight, Key, Sparkles,
-  EyeOff,
-  Eye
+  Trash2, ToggleLeft, ToggleRight, Sparkles,
+  Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -59,40 +58,12 @@ interface Fighter {
   created_at: string;
 }
 
-interface Official {
-  id: number;
-  full_name: string;
-  position: string;
-  email: string;
-  phone: string;
-  photo_url?: string | null;
-  passport_image_url?: string | null;
-  branch_name: string;
-  created_at: string;
-}
-
-interface DanTest {
-  id: number;
-  full_name: string;
-  position: string;
-  email: string;
-  phone: string;
-  black_belt: string;
-  dan: string;
-  international_registration_number: string;
-  passport_image_url?: string | null;
-  branch_name: string;
-  created_at: string;
-}
-
 const SHARED_BRANCH_CHIEF_PASSWORD = 'AllAsia2026#Kyoku!Access';
 
 export default function AdminDashboardClient() {
   const router = useRouter();
   const [branchChiefs, setBranchChiefs] = useState<BranchChief[]>([]);
   const [fighters, setFighters] = useState<Fighter[]>([]);
-  const [officials, setOfficials] = useState<Official[]>([]);
-  const [danTests, setDanTests] = useState<DanTest[]>([]);
   const [loading, setLoading] = useState(true);
   
   // New branch chief form
@@ -101,10 +72,10 @@ export default function AdminDashboardClient() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  // Reset password
-  const [resetPasswordId, setResetPasswordId] = useState<number | null>(null);
-  const [resetPassword, setResetPassword] = useState('');
-  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [editBranchChiefId, setEditBranchChiefId] = useState<number | null>(null);
+  const [editBranchName, setEditBranchName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -113,11 +84,9 @@ export default function AdminDashboardClient() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [chiefsRes, fightersRes, officialsRes, danTestsRes] = await Promise.all([
+      const [chiefsRes, fightersRes] = await Promise.all([
         fetch('/api/branch-chiefs'),
         fetch('/api/fighters'),
-        fetch('/api/officials'),
-        fetch('/api/dan-tests'),
       ]);
 
       if (chiefsRes.ok) {
@@ -127,14 +96,6 @@ export default function AdminDashboardClient() {
       if (fightersRes.ok) {
         const data = await fightersRes.json();
         setFighters(data.fighters);
-      }
-      if (officialsRes.ok) {
-        const data = await officialsRes.json();
-        setOfficials(data.officials);
-      }
-      if (danTestsRes.ok) {
-        const data = await danTestsRes.json();
-        setDanTests(data.danTests);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -181,6 +142,43 @@ export default function AdminDashboardClient() {
     }
   };
 
+  const openEditBranchChief = (chief: BranchChief) => {
+    setEditBranchChiefId(chief.id);
+    setEditBranchName(chief.branch_name);
+    setEditEmail(chief.email.includes('@') ? chief.email.split('@')[0] : chief.email);
+  };
+
+  const handleEditBranchChief = async (id: number) => {
+    if (!editBranchName.trim() || !editEmail.trim()) return;
+
+    setEditing(true);
+    try {
+      const res = await fetch(`/api/branch-chiefs/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branchName: editBranchName,
+          email: editEmail,
+        }),
+      });
+
+      if (res.ok) {
+        setEditBranchChiefId(null);
+        setEditBranchName('');
+        setEditEmail('');
+        fetchData();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update branch chief');
+      }
+    } catch (error) {
+      console.error('Edit branch chief error:', error);
+      alert('Failed to update branch chief');
+    } finally {
+      setEditing(false);
+    }
+  };
+
   const handleToggleActive = async (id: number, currentStatus: boolean) => {
     try {
       const res = await fetch(`/api/branch-chiefs/${id}`, {
@@ -197,28 +195,8 @@ export default function AdminDashboardClient() {
     }
   };
 
-  const handleResetPassword = async (id: number) => {
-    if (!resetPassword) return;
-
-    try {
-      const res = await fetch(`/api/branch-chiefs/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: resetPassword }),
-      });
-
-      if (res.ok) {
-        setResetPasswordId(null);
-        setResetPassword('');
-        alert('Password updated successfully');
-      }
-    } catch (error) {
-      console.error('Reset password error:', error);
-    }
-  };
-
   const handleDeleteBranchChief = async (id: number) => {
-    if (!confirm('Are you sure? This will also delete all fighters and officials registered by this branch.')) {
+    if (!confirm('Are you sure? This will also delete all registrations for this branch.')) {
       return;
     }
 
@@ -242,32 +220,6 @@ export default function AdminDashboardClient() {
       }
     } catch (error) {
       console.error('Delete fighter error:', error);
-    }
-  };
-
-  const handleDeleteOfficial = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this official?')) return;
-
-    try {
-      const res = await fetch(`/api/officials/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchData();
-      }
-    } catch (error) {
-      console.error('Delete official error:', error);
-    }
-  };
-
-  const handleDeleteDanTest = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this dan test registration?')) return;
-
-    try {
-      const res = await fetch(`/api/dan-tests/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        fetchData();
-      }
-    } catch (error) {
-      console.error('Delete dan test error:', error);
     }
   };
 
@@ -332,7 +284,7 @@ export default function AdminDashboardClient() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="border-border/60 bg-card/75 shadow-sm backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Branch Chiefs</CardTitle>
@@ -355,35 +307,13 @@ export default function AdminDashboardClient() {
               <p className="text-xs text-muted-foreground">Registered fighters</p>
             </CardContent>
           </Card>
-          <Card className="border-border/60 bg-card/75 shadow-sm backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Officials</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{officials.length}</div>
-              <p className="text-xs text-muted-foreground">Registered officials</p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/60 bg-card/75 shadow-sm backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Dan Tests</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{danTests.length}</div>
-              <p className="text-xs text-muted-foreground">Dan test candidates</p>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Tabs */}
         <Tabs defaultValue="branch-chiefs" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-sm md:w-fit md:min-w-140">
+          <TabsList className="grid w-full grid-cols-2 rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-sm md:w-fit md:min-w-80">
             <TabsTrigger value="branch-chiefs">Branch Chiefs</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
-            <TabsTrigger value="officials">Officials</TabsTrigger>
-            <TabsTrigger value="dan-tests">Dan Test</TabsTrigger>
           </TabsList>
 
           {/* Branch Chiefs Tab */}
@@ -496,45 +426,48 @@ export default function AdminDashboardClient() {
                                 <ToggleLeft className="h-4 w-4 text-muted-foreground" />
                               )}
                             </Button>
-                            <Dialog open={resetPasswordId === chief.id} onOpenChange={(open) => !open && setResetPasswordId(null)}>
+                            <Dialog open={editBranchChiefId === chief.id} onOpenChange={(open) => !open && setEditBranchChiefId(null)}>
                               <DialogTrigger asChild>
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => setResetPasswordId(chief.id)}
-                                  title="Reset Password"
+                                  onClick={() => openEditBranchChief(chief)}
+                                  title="Edit Branch Chief"
                                 >
-                                  <Key className="h-4 w-4" />
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
-                                  <DialogTitle>Reset Password</DialogTitle>
+                                  <DialogTitle>Edit Branch Chief</DialogTitle>
                                   <DialogDescription>
-                                    Set a new password for {chief.branch_name}
+                                    Update branch details for {chief.branch_name}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
                                   <div className="space-y-2">
-                                    <Label htmlFor="resetPassword">New Password</Label>
-                                    <div className="relative">
+                                    <Label htmlFor="editBranchName">Branch Name</Label>
+                                    <Input
+                                      id="editBranchName"
+                                      value={editBranchName}
+                                      onChange={(e) => setEditBranchName(e.target.value)}
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="editEmail">Email Username</Label>
+                                    <div className="flex items-center gap-0 overflow-hidden rounded-md border border-input">
                                       <Input
-                                        id="resetPassword"
-                                        type={showResetPassword ? 'text' : 'password'}
-                                        value={resetPassword}
-                                        onChange={(e) => setResetPassword(e.target.value)}
+                                        id="editEmail"
+                                        type="text"
+                                        value={editEmail}
+                                        onChange={(e) => setEditEmail(e.target.value.split('@')[0])}
+                                        className="border-0 focus:ring-0"
                                       />
-                                      <button
-                                        type="button"
-                                        onClick={() => setShowResetPassword(!showResetPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                      >
-                                        {showResetPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                      </button>
+                                      <span className="whitespace-nowrap bg-muted px-3 py-2 font-medium text-muted-foreground">@kyokushinbd.com</span>
                                     </div>
                                   </div>
-                                  <Button onClick={() => handleResetPassword(chief.id)} className="w-full">
-                                    Update Password
+                                  <Button onClick={() => handleEditBranchChief(chief.id)} className="w-full" disabled={editing}>
+                                    {editing ? 'Saving...' : 'Save Changes'}
                                   </Button>
                                 </div>
                               </DialogContent>
@@ -674,160 +607,6 @@ export default function AdminDashboardClient() {
             </Card>
           </TabsContent>
 
-          {/* Officials Tab */}
-          <TabsContent value="officials">
-            <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Registered Officials</CardTitle>
-                  <CardDescription>All officials registered for the championship</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => exportCSV('officials')}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto rounded-xl border border-border/60">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Full Name</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Branch</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {officials.map((official) => (
-                      <TableRow key={official.id} className="hover:bg-muted/40">
-                        <TableCell className="font-medium">{official.full_name}</TableCell>
-                        <TableCell>{official.position || '-'}</TableCell>
-                        <TableCell>{official.email || '-'}</TableCell>
-                        <TableCell>{official.phone || '-'}</TableCell>
-                        <TableCell>{official.branch_name}</TableCell>
-                        <TableCell className="text-right">
-                          {official.photo_url && (
-                            <Button variant="ghost" size="sm" asChild>
-                              <a
-                                href={official.photo_url}
-                                download={`official-${official.id}-photo`}
-                                aria-label={`Download photo of ${official.full_name}`}
-                              >
-                                <Download className="h-4 w-4" />
-                              </a>
-                            </Button>
-                          )}
-                          {official.passport_image_url && (
-                            <Button variant="ghost" size="sm" asChild>
-                              <a
-                                href={official.passport_image_url}
-                                download={`official-${official.id}-passport`}
-                                aria-label={`Download passport image of ${official.full_name}`}
-                              >
-                                <span className="text-xs">P</span>
-                              </a>
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteOfficial(official.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {officials.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                          No officials registered yet
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Dan Test Tab */}
-          <TabsContent value="dan-tests">
-            <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Dan Test Candidates</CardTitle>
-                  <CardDescription>All dan test candidates registered for the championship</CardDescription>
-                </div>
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={() => exportCSV('dan_tests')}>
-                  <Download className="mr-2 h-4 w-4" />
-                  Export CSV
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto rounded-xl border border-border/60">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Full Name</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Black Belt</TableHead>
-                        <TableHead>Dan</TableHead>
-                        <TableHead>Intl. Reg. No.</TableHead>
-                        <TableHead>Branch</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {danTests.map((danTest) => (
-                        <TableRow key={danTest.id} className="hover:bg-muted/40">
-                          <TableCell className="font-medium">{danTest.full_name}</TableCell>
-                          <TableCell>{danTest.position || '-'}</TableCell>
-                          <TableCell>{danTest.black_belt || '-'}</TableCell>
-                          <TableCell>{danTest.dan || '-'}</TableCell>
-                          <TableCell>{danTest.international_registration_number || '-'}</TableCell>
-                          <TableCell>{danTest.branch_name}</TableCell>
-                          <TableCell className="text-right">
-                            {danTest.passport_image_url && (
-                              <Button variant="ghost" size="sm" asChild>
-                                <a
-                                  href={danTest.passport_image_url}
-                                  download={`dan-test-${danTest.id}-passport`}
-                                  aria-label={`Download passport image of ${danTest.full_name}`}
-                                >
-                                  <span className="text-xs">P</span>
-                                </a>
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteDanTest(danTest.id)}
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {danTests.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
-                            No dan test registrations yet
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </main>
     </div>

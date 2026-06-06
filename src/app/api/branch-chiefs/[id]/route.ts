@@ -39,23 +39,50 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { isActive, password } = await request.json();
+    const { branchName, email, isActive, password } = await request.json();
+
+    let updated = false;
+
+    if (typeof branchName === 'string' && branchName.trim()) {
+      await sql`
+        UPDATE branch_chiefs
+        SET "branchName" = ${branchName.trim()}, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+      `;
+      updated = true;
+    }
+
+    if (typeof email === 'string' && email.trim()) {
+      const normalizedEmail = email.includes('@') ? email.trim() : `${email.trim()}@kyokushinbd.com`;
+      await sql`
+        UPDATE branch_chiefs
+        SET email = ${normalizedEmail}, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+      `;
+      updated = true;
+    }
 
     if (typeof isActive === 'boolean') {
       await sql`
-        UPDATE branch_chiefs 
+        UPDATE branch_chiefs
         SET "isActive" = ${isActive}, "updatedAt" = CURRENT_TIMESTAMP
         WHERE id = ${id}
       `;
+      updated = true;
     }
 
     if (password) {
       const passwordHash = await hashPassword(password);
       await sql`
-        UPDATE branch_chiefs 
+        UPDATE branch_chiefs
         SET "passwordHash" = ${passwordHash}, "updatedAt" = CURRENT_TIMESTAMP
         WHERE id = ${id}
       `;
+      updated = true;
+    }
+
+    if (!updated) {
+      return NextResponse.json({ error: 'No changes provided' }, { status: 400 });
     }
 
     return NextResponse.json({ success: true });

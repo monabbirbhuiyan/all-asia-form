@@ -50,6 +50,8 @@ interface Fighter {
   belt_color: string;
   belt_rank: string;
   training_seminar?: string | null;
+  dan_test_participation?: string | null;
+  dan_test_qualification_number?: string | null;
   international_registration_number: string;
   photo_url: string;
   passport_image_url?: string | null;
@@ -102,6 +104,8 @@ interface BranchChiefDetail {
   passport_image_url?: string | null;
   international_registration_number?: string | null;
   training_seminar?: string | null;
+  dan_test_participation?: string | null;
+  dan_test_qualification_number?: string | null;
   branch_name: string;
   created_at: string;
 }
@@ -149,8 +153,6 @@ const TRAINING_SEMINAR_OPTIONS = ['Yes', 'No'];
 export default function BranchDashboardClient({ branchName }: { branchName: string }) {
   const router = useRouter();
   const [fighters, setFighters] = useState<Fighter[]>([]);
-  const [officials, setOfficials] = useState<Official[]>([]);
-  const [danTests, setDanTests] = useState<DanTest[]>([]);
   const [branchChiefDetails, setBranchChiefDetails] = useState<BranchChiefDetail[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -180,6 +182,8 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     beltColor: '',
     beltRank: '',
     trainingSeminar: '',
+    danTestParticipation: '',
+    danTestQualificationNumber: '',
     internationalRegistrationNumber: '',
   });
 
@@ -240,6 +244,8 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     email: '',
     internationalRegistrationNumber: '',
     trainingSeminar: '',
+    danTestParticipation: '',
+    danTestQualificationNumber: '',
   });
 
   useEffect(() => {
@@ -249,24 +255,14 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [fightersRes, officialsRes, danTestsRes, branchChiefDetailsRes] = await Promise.all([
+      const [fightersRes, branchChiefDetailsRes] = await Promise.all([
         fetch('/api/fighters'),
-        fetch('/api/officials'),
-        fetch('/api/dan-tests'),
         fetch('/api/branch-chief-details'),
       ]);
 
       if (fightersRes.ok) {
         const data = await fightersRes.json();
         setFighters(data.fighters);
-      }
-      if (officialsRes.ok) {
-        const data = await officialsRes.json();
-        setOfficials(data.officials);
-      }
-      if (danTestsRes.ok) {
-        const data = await danTestsRes.json();
-        setDanTests(data.danTests);
       }
       if (branchChiefDetailsRes.ok) {
         const data = await branchChiefDetailsRes.json();
@@ -410,6 +406,8 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       beltColor: '',
       beltRank: '',
       trainingSeminar: '',
+      danTestParticipation: '',
+      danTestQualificationNumber: '',
       internationalRegistrationNumber: '',
     });
     setTournamentEntries([{ tournamentName: '', achievement: '' }]);
@@ -478,6 +476,8 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       email: '',
       internationalRegistrationNumber: '',
       trainingSeminar: '',
+      danTestParticipation: '',
+      danTestQualificationNumber: '',
     });
     setBranchChiefDetailPhoto(null);
     setBranchChiefDetailPhotoPreview(null);
@@ -543,6 +543,8 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       formData.append('beltColor', fighterForm.beltColor);
       formData.append('beltRank', fighterForm.beltRank);
       formData.append('trainingSeminar', fighterForm.trainingSeminar);
+      formData.append('danTestParticipation', fighterForm.danTestParticipation);
+      formData.append('danTestQualificationNumber', fighterForm.danTestQualificationNumber);
       formData.append('internationalRegistrationNumber', fighterForm.internationalRegistrationNumber);
       formData.append('tournamentHistory', JSON.stringify(tournamentEntries));
       
@@ -779,22 +781,12 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">My Officials</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Branch Chief / Dojo Operator</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{officials.length}</div>
-              <p className="text-xs text-muted-foreground">Registered officials</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">My Dan Tests</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-foreground">{danTests.length}</div>
-              <p className="text-xs text-muted-foreground">Dan test candidates</p>
+              <div className="text-2xl font-bold text-foreground">{branchChiefDetails.length}</div>
+              <p className="text-xs text-muted-foreground">Submitted detail entries</p>
             </CardContent>
           </Card>
         </div>
@@ -804,8 +796,6 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
           <TabsList>
             <TabsTrigger value="branch-chief-details">Branch Chief / Dojo Operator</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
-            <TabsTrigger value="officials">Officials</TabsTrigger>
-            <TabsTrigger value="dan-tests">Dan Test</TabsTrigger>            
           </TabsList>
 
           {/* Fighters Tab */}
@@ -1045,6 +1035,39 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                         </Select>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Dan Test</Label>
+                        <Select
+                          value={fighterForm.danTestParticipation}
+                          onValueChange={(value) => setFighterForm({
+                            ...fighterForm,
+                            danTestParticipation: value,
+                            danTestQualificationNumber: value === 'Yes' ? fighterForm.danTestQualificationNumber : '',
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Will join Dan Test or not" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {fighterForm.danTestParticipation === 'Yes' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="fighterDanTestQualificationNumber">Black Belt Card Number or 1 Kyu Certificate Number</Label>
+                          <Input
+                            id="fighterDanTestQualificationNumber"
+                            placeholder="Enter black belt card number or 1 kyu certificate number"
+                            value={fighterForm.danTestQualificationNumber}
+                            onChange={(e) => setFighterForm({ ...fighterForm, danTestQualificationNumber: e.target.value })}
+                            required
+                          />
+                        </div>
+                      )}
+
                       {/* Belt Color & Rank */}
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -1228,469 +1251,6 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                     </TableBody>
                   </Table>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Officials Tab */}
-          <TabsContent value="officials">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>My Officials</CardTitle>
-                  <CardDescription>Register officials for the championship</CardDescription>
-                </div>
-                <Dialog
-                  open={officialDialogOpen}
-                  onOpenChange={(open) => {
-                    setOfficialDialogOpen(open);
-                    if (!open) resetOfficialForm();
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Register Official
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Register New Official</DialogTitle>
-                      <DialogDescription>
-                        Fill in the official&apos;s details for championship registration.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmitOfficial} className="space-y-4">
-                      {/* Official Photo Upload */}
-                      <div className="space-y-2">
-                        <Label>Photo</Label>
-                        <div className="flex items-center gap-4">
-                          <div className="w-24 h-32 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
-                            {officialPhotoPreview ? (
-                              <img
-                                src={officialPhotoPreview}
-                                alt="Official photo preview"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="h-10 w-10 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <input
-                              ref={officialPhotoInputRef}
-                              type="file"
-                              accept="image/*"
-                              onChange={handleOfficialPhotoChange}
-                              className="hidden"
-                              id="official-photo-upload"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => officialPhotoInputRef.current?.click()}
-                            >
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload Photo
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Official Passport Upload */}
-                      <div className="space-y-2">
-                        <Label>Passport Image</Label>
-                        <div className="flex items-center gap-4">
-                          <div className="w-24 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
-                            {officialPassportPreview ? (
-                              <img
-                                src={officialPassportPreview}
-                                alt="Official passport preview"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="h-8 w-8 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <input
-                              ref={officialPassportInputRef}
-                              type="file"
-                              accept="image/*"
-                              onChange={handleOfficialPassportChange}
-                              className="hidden"
-                              id="official-passport-upload"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => officialPassportInputRef.current?.click()}
-                            >
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload Passport Image
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="officialName">Full Name *</Label>
-                        <Input
-                          id="officialName"
-                          placeholder="Enter full name"
-                          value={officialForm.fullName}
-                          onChange={(e) => setOfficialForm({ ...officialForm, fullName: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="position">Position</Label>
-                        <Input
-                          id="position"
-                          placeholder="e.g., Referee, Judge, Coach"
-                          value={officialForm.position}
-                          onChange={(e) => setOfficialForm({ ...officialForm, position: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="officialCountry">Country</Label>
-                          <Input
-                            id="officialCountry"
-                            placeholder="Enter country"
-                            value={officialForm.country}
-                            onChange={(e) => setOfficialForm({ ...officialForm, country: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="officialPassportNumber">Passport Number</Label>
-                          <Input
-                            id="officialPassportNumber"
-                            placeholder="Enter passport number"
-                            value={officialForm.passportNumber}
-                            onChange={(e) => setOfficialForm({ ...officialForm, passportNumber: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="officialEmail">Email</Label>
-                        <Input
-                          id="officialEmail"
-                          type="email"
-                          placeholder="Enter email address"
-                          value={officialForm.email}
-                          onChange={(e) => setOfficialForm({ ...officialForm, email: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input
-                          id="phone"
-                          placeholder="Enter phone number"
-                          value={officialForm.phone}
-                          onChange={(e) => setOfficialForm({ ...officialForm, phone: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Training Seminar Participation</Label>
-                        <Select
-                          value={officialForm.trainingSeminar}
-                          onValueChange={(value) => setOfficialForm({ ...officialForm, trainingSeminar: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Will participate or not" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TRAINING_SEMINAR_OPTIONS.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <Button type="submit" className="w-full" disabled={officialSubmitting}>
-                        {officialSubmitting ? 'Registering...' : 'Register Official'}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Full Name</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {officials.map((official) => (
-                      <TableRow key={official.id}>
-                        <TableCell className="font-medium">{official.full_name}</TableCell>
-                        <TableCell>{official.position || '-'}</TableCell>
-                        <TableCell>{official.email || '-'}</TableCell>
-                        <TableCell>{official.phone || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteOfficial(official.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {officials.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No officials registered yet. Click &quot;Register Official&quot; to add your first official.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Dan Test Tab */}
-          <TabsContent value="dan-tests">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>My Dan Test Candidates</CardTitle>
-                  <CardDescription>Register dan test candidates for the championship</CardDescription>
-                </div>
-                <Dialog
-                  open={danTestDialogOpen}
-                  onOpenChange={(open) => {
-                    setDanTestDialogOpen(open);
-                    if (!open) resetDanTestForm();
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Register Dan Test
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Register Dan Test Candidate</DialogTitle>
-                      <DialogDescription>
-                        Fill in candidate details for dan test registration.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmitDanTest} className="space-y-4">
-                      {/* Passport Upload */}
-                      <div className="space-y-2">
-                        <Label>Passport Image</Label>
-                        <div className="flex items-center gap-4">
-                          <div className="w-24 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center overflow-hidden bg-muted">
-                            {danTestPassportPreview ? (
-                              <img
-                                src={danTestPassportPreview}
-                                alt="Dan test passport preview"
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <User className="h-8 w-8 text-muted-foreground" />
-                            )}
-                          </div>
-                          <div className="flex-1">
-                            <input
-                              ref={danTestPassportInputRef}
-                              type="file"
-                              accept="image/*"
-                              onChange={handleDanTestPassportChange}
-                              className="hidden"
-                              id="dan-passport-upload"
-                            />
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => danTestPassportInputRef.current?.click()}
-                            >
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload Passport Image
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="danTestName">Full Name *</Label>
-                        <Input
-                          id="danTestName"
-                          placeholder="Enter full name"
-                          value={danTestForm.fullName}
-                          onChange={(e) => setDanTestForm({ ...danTestForm, fullName: e.target.value })}
-                          required
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="danTestPosition">Position</Label>
-                        <Input
-                          id="danTestPosition"
-                          placeholder="e.g., Instructor"
-                          value={danTestForm.position}
-                          onChange={(e) => setDanTestForm({ ...danTestForm, position: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="danTestCountry">Country</Label>
-                          <Input
-                            id="danTestCountry"
-                            placeholder="Enter country"
-                            value={danTestForm.country}
-                            onChange={(e) => setDanTestForm({ ...danTestForm, country: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="danTestPassportNumber">Passport Number</Label>
-                          <Input
-                            id="danTestPassportNumber"
-                            placeholder="Enter passport number"
-                            value={danTestForm.passportNumber}
-                            onChange={(e) => setDanTestForm({ ...danTestForm, passportNumber: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="danTestEmail">Email</Label>
-                        <Input
-                          id="danTestEmail"
-                          type="email"
-                          placeholder="Enter email address"
-                          value={danTestForm.email}
-                          onChange={(e) => setDanTestForm({ ...danTestForm, email: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="danTestPhone">Phone</Label>
-                        <Input
-                          id="danTestPhone"
-                          placeholder="Enter phone number"
-                          value={danTestForm.phone}
-                          onChange={(e) => setDanTestForm({ ...danTestForm, phone: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="blackBelt">Black Belt</Label>
-                          <Input
-                            id="blackBelt"
-                            placeholder="e.g., Yes"
-                            value={danTestForm.blackBelt}
-                            onChange={(e) => setDanTestForm({ ...danTestForm, blackBelt: e.target.value })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="dan">Dan</Label>
-                          <Input
-                            id="dan"
-                            placeholder="e.g., 1st Dan"
-                            value={danTestForm.dan}
-                            onChange={(e) => setDanTestForm({ ...danTestForm, dan: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="danIntlRegNo">International Registration Number</Label>
-                        <Input
-                          id="danIntlRegNo"
-                          placeholder="Enter registration number"
-                          value={danTestForm.internationalRegistrationNumber}
-                          onChange={(e) => setDanTestForm({ ...danTestForm, internationalRegistrationNumber: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Training Seminar Participation</Label>
-                        <Select
-                          value={danTestForm.trainingSeminar}
-                          onValueChange={(value) => setDanTestForm({ ...danTestForm, trainingSeminar: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Will participate or not" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {TRAINING_SEMINAR_OPTIONS.map((option) => (
-                              <SelectItem key={option} value={option}>
-                                {option}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <Button type="submit" className="w-full" disabled={danTestSubmitting}>
-                        {danTestSubmitting ? 'Registering...' : 'Register Dan Test'}
-                      </Button>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Full Name</TableHead>
-                      <TableHead>Position</TableHead>
-                      <TableHead>Black Belt</TableHead>
-                      <TableHead>Dan</TableHead>
-                      <TableHead>Intl. Reg. No.</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {danTests.map((danTest) => (
-                      <TableRow key={danTest.id}>
-                        <TableCell className="font-medium">{danTest.full_name}</TableCell>
-                        <TableCell>{danTest.position || '-'}</TableCell>
-                        <TableCell>{danTest.black_belt || '-'}</TableCell>
-                        <TableCell>{danTest.dan || '-'}</TableCell>
-                        <TableCell>{danTest.international_registration_number || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteDanTest(danTest.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {danTests.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                          No dan test registrations yet. Click &quot;Register Dan Test&quot; to add the first one.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1881,6 +1441,39 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                         </Select>
                       </div>
 
+                      <div className="space-y-2">
+                        <Label>Dan Test</Label>
+                        <Select
+                          value={branchChiefDetailForm.danTestParticipation}
+                          onValueChange={(value) => setBranchChiefDetailForm({
+                            ...branchChiefDetailForm,
+                            danTestParticipation: value,
+                            danTestQualificationNumber: value === 'Yes' ? branchChiefDetailForm.danTestQualificationNumber : '',
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Will join Dan Test or not" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Yes">Yes</SelectItem>
+                            <SelectItem value="No">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {branchChiefDetailForm.danTestParticipation === 'Yes' && (
+                        <div className="space-y-2">
+                          <Label htmlFor="branchChiefDanTestQualificationNumber">Black Belt Card Number or 1 Kyu Certificate Number</Label>
+                          <Input
+                            id="branchChiefDanTestQualificationNumber"
+                            placeholder="Enter black belt card number or 1 kyu certificate number"
+                            value={branchChiefDetailForm.danTestQualificationNumber}
+                            onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, danTestQualificationNumber: e.target.value })}
+                            required
+                          />
+                        </div>
+                      )}
+
                       <Button type="submit" className="w-full" disabled={branchChiefDetailSubmitting}>
                         {branchChiefDetailSubmitting ? 'Submitting...' : 'Submit Details'}
                       </Button>
@@ -1897,6 +1490,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                       <TableHead>Country</TableHead>
                       <TableHead>Phone</TableHead>
                       <TableHead>Email</TableHead>
+                      <TableHead>Dan Test</TableHead>
                       <TableHead>Training Seminar</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -1909,6 +1503,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                         <TableCell>{entry.country || '-'}</TableCell>
                         <TableCell>{entry.phone || '-'}</TableCell>
                         <TableCell>{entry.email || '-'}</TableCell>
+                        <TableCell>{entry.dan_test_participation || '-'}</TableCell>
                         <TableCell>{entry.training_seminar || '-'}</TableCell>
                         <TableCell className="text-right">
                           <Button
@@ -1924,7 +1519,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                     ))}
                     {branchChiefDetails.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                           No entries yet. Click &quot;Add Details&quot; to submit one.
                         </TableCell>
                       </TableRow>

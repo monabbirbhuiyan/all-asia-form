@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
       return String(Math.trunc(numericValue));
     };
 
+    const csvCell = (value: unknown): string => `"${String(value ?? '').replace(/"/g, '""')}"`;
+
     let csvContent = '';
     
     if (type === 'fighters') {
@@ -28,23 +30,55 @@ export async function GET(request: NextRequest) {
           f.id,
           f."fullName" AS full_name,
           f."branchChiefName" AS branch_chief_name,
+          f.phone,
+          f.email,
+          f."dateOfBirth" AS date_of_birth,
+          f.country,
+          f."passportNumber" AS passport_number,
           f.address,
           f.height,
           f.weight,
           f."beltColor" AS belt_color,
           f."beltRank" AS belt_rank,
+          f."trainingSeminar" AS training_seminar,
+          f."danTestParticipation" AS dan_test_participation,
+          f."danTestQualificationNumber" AS dan_test_qualification_number,
           f."internationalRegistrationNumber" AS international_registration_number,
+          f."tournamentHistory" AS tournament_history,
           bc."branchName" AS branch_name,
-          f."createdAt" AS created_at
+          f."createdAt" AS created_at,
+          f."updatedAt" AS updated_at
         FROM fighters f
         JOIN branch_chiefs bc ON f."branchChiefId" = bc.id
         ORDER BY bc."branchName", f."fullName"
       `;
 
-      csvContent = 'ID,Full Name,Branch Chief Name,Address,Height (cm),Weight (kg),Belt Color,Belt Rank,International Reg. No.,Branch,Registered At\n';
+      csvContent = 'ID,Full Name,Branch Chief Name,Phone,Email,Date of Birth,Country,Passport Number,Address,Height (cm),Weight (kg),Belt Color,Belt Rank,Training Seminar,Dan Test Participation,Dan Test Qualification Number,International Reg. No.,Tournament History,Branch,Registered At,Updated At\n';
       
       for (const f of fighters) {
-        csvContent += `${f.id},"${f.full_name || ''}","${(f.branch_chief_name || '').replace(/"/g, '""')}","${(f.address || '').replace(/"/g, '""')}",${formatWholeNumber(f.height)},${formatWholeNumber(f.weight)},"${f.belt_color || ''}","${f.belt_rank || ''}","${f.international_registration_number || ''}","${f.branch_name}","${f.created_at}"\n`;
+        csvContent += [
+          f.id,
+          csvCell(f.full_name),
+          csvCell(f.branch_chief_name),
+          csvCell(f.phone),
+          csvCell(f.email),
+          csvCell(f.date_of_birth),
+          csvCell(f.country),
+          csvCell(f.passport_number),
+          csvCell(f.address),
+          csvCell(formatWholeNumber(f.height)),
+          csvCell(formatWholeNumber(f.weight)),
+          csvCell(f.belt_color),
+          csvCell(f.belt_rank),
+          csvCell(f.training_seminar),
+          csvCell(f.dan_test_participation),
+          csvCell(f.dan_test_qualification_number),
+          csvCell(f.international_registration_number),
+          csvCell(f.tournament_history),
+          csvCell(f.branch_name),
+          csvCell(f.created_at),
+          csvCell(f.updated_at),
+        ].join(',') + '\n';
       }
     } else if (type === 'officials') {
       const officials = await sql`
@@ -52,19 +86,35 @@ export async function GET(request: NextRequest) {
           o.id,
           o."fullName" AS full_name,
           o.position,
+          o.country,
+          o."passportNumber" AS passport_number,
+          o."trainingSeminar" AS training_seminar,
           o.email,
           o.phone,
           bc."branchName" AS branch_name,
-          o."createdAt" AS created_at
+          o."createdAt" AS created_at,
+          o."updatedAt" AS updated_at
         FROM officials o
         JOIN branch_chiefs bc ON o."branchChiefId" = bc.id
         ORDER BY bc."branchName", o."fullName"
       `;
 
-      csvContent = 'ID,Full Name,Position,Email,Phone,Branch,Registered At\n';
+      csvContent = 'ID,Full Name,Position,Country,Passport Number,Training Seminar,Email,Phone,Branch,Registered At,Updated At\n';
       
       for (const o of officials) {
-        csvContent += `${o.id},"${o.full_name || ''}","${o.position || ''}","${o.email || ''}","${o.phone || ''}","${o.branch_name}","${o.created_at}"\n`;
+        csvContent += [
+          o.id,
+          csvCell(o.full_name),
+          csvCell(o.position),
+          csvCell(o.country),
+          csvCell(o.passport_number),
+          csvCell(o.training_seminar),
+          csvCell(o.email),
+          csvCell(o.phone),
+          csvCell(o.branch_name),
+          csvCell(o.created_at),
+          csvCell(o.updated_at),
+        ].join(',') + '\n';
       }
     } else if (type === 'branch_chiefs') {
       const chiefs = await sql`
@@ -73,15 +123,23 @@ export async function GET(request: NextRequest) {
           "branchName" AS branch_name,
           email,
           "isActive" AS is_active,
-          "createdAt" AS created_at
+          "createdAt" AS created_at,
+          "updatedAt" AS updated_at
         FROM branch_chiefs
         ORDER BY "branchName"
       `;
 
-      csvContent = 'ID,Branch Name,Email,Active,Created At\n';
+      csvContent = 'ID,Branch Name,Email,Active,Created At,Updated At\n';
       
       for (const c of chiefs) {
-        csvContent += `${c.id},"${c.branch_name}","${c.email}",${c.is_active},"${c.created_at}"\n`;
+        csvContent += [
+          c.id,
+          csvCell(c.branch_name),
+          csvCell(c.email),
+          csvCell(c.is_active),
+          csvCell(c.created_at),
+          csvCell(c.updated_at),
+        ].join(',') + '\n';
       }
     } else if (type === 'dan_tests') {
       const danTests = await sql`
@@ -89,22 +147,41 @@ export async function GET(request: NextRequest) {
           d.id,
           d."fullName" AS full_name,
           d.position,
+          d.country,
+          d."passportNumber" AS passport_number,
           d.email,
           d.phone,
           d."blackBelt" AS black_belt,
           d.dan,
           d."internationalRegistrationNumber" AS international_registration_number,
           bc."branchName" AS branch_name,
-          d."createdAt" AS created_at
+          d."trainingSeminar" AS training_seminar,
+          d."createdAt" AS created_at,
+          d."updatedAt" AS updated_at
         FROM dan_tests d
         JOIN branch_chiefs bc ON d."branchChiefId" = bc.id
         ORDER BY bc."branchName", d."fullName"
       `;
 
-      csvContent = 'ID,Full Name,Position,Email,Phone,Black Belt,Dan,International Reg. No.,Branch,Registered At\n';
+      csvContent = 'ID,Full Name,Position,Country,Passport Number,Email,Phone,Black Belt,Dan,International Reg. No.,Training Seminar,Branch,Registered At,Updated At\n';
 
       for (const d of danTests) {
-        csvContent += `${d.id},"${d.full_name || ''}","${d.position || ''}","${d.email || ''}","${d.phone || ''}","${d.black_belt || ''}","${d.dan || ''}","${d.international_registration_number || ''}","${d.branch_name}","${d.created_at}"\n`;
+        csvContent += [
+          d.id,
+          csvCell(d.full_name),
+          csvCell(d.position),
+          csvCell(d.country),
+          csvCell(d.passport_number),
+          csvCell(d.email),
+          csvCell(d.phone),
+          csvCell(d.black_belt),
+          csvCell(d.dan),
+          csvCell(d.international_registration_number),
+          csvCell(d.training_seminar),
+          csvCell(d.branch_name),
+          csvCell(d.created_at),
+          csvCell(d.updated_at),
+        ].join(',') + '\n';
       }
     }
 
