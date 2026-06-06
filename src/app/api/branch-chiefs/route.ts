@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { getSession, hashPassword } from '@/lib/auth';
 
+const SHARED_BRANCH_CHIEF_PASSWORD = 'AllAsia2026#Kyoku!Access';
+
 export async function GET() {
   try {
     const session = await getSession();
@@ -40,11 +42,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { branchName, email, password } = await request.json();
+    const { branchName, email } = await request.json();
 
-    if (!branchName || !email || !password) {
+    if (!branchName || !email) {
       return NextResponse.json(
-        { error: 'Branch name, email, and password are required' },
+        { error: 'Branch name and email are required' },
         { status: 400 }
       );
     }
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
     // Append @kyokushinbd.com to the email if not already present
     const fullEmail = email.includes('@') ? email : `${email}@kyokushinbd.com`;
 
-    const passwordHash = await hashPassword(password);
+    const passwordHash = await hashPassword(SHARED_BRANCH_CHIEF_PASSWORD);
 
     const result = await sql`
       INSERT INTO branch_chiefs ("branchName", email, "passwordHash", "updatedAt")
@@ -65,7 +67,13 @@ export async function POST(request: NextRequest) {
         "createdAt" AS created_at
     `;
 
-    return NextResponse.json({ branchChief: result[0] }, { status: 201 });
+    return NextResponse.json(
+      {
+        branchChief: result[0],
+        sharedPassword: SHARED_BRANCH_CHIEF_PASSWORD,
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     console.error('Create branch chief error:', error);
     if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {

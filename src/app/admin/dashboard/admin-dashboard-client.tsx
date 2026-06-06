@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Users, Shield, Award, Download, Plus, LogOut, 
-  Trash2, ToggleLeft, ToggleRight, Key, Eye, EyeOff, Sparkles
+  Trash2, ToggleLeft, ToggleRight, Key, Sparkles,
+  EyeOff,
+  Eye
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -83,6 +85,8 @@ interface DanTest {
   created_at: string;
 }
 
+const SHARED_BRANCH_CHIEF_PASSWORD = 'AllAsia2026#Kyoku!Access';
+
 export default function AdminDashboardClient() {
   const router = useRouter();
   const [branchChiefs, setBranchChiefs] = useState<BranchChief[]>([]);
@@ -94,8 +98,6 @@ export default function AdminDashboardClient() {
   // New branch chief form
   const [newBranchName, setNewBranchName] = useState('');
   const [newEmail, setNewEmail] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -157,15 +159,15 @@ export default function AdminDashboardClient() {
         body: JSON.stringify({
           branchName: newBranchName,
           email: newEmail,
-          password: newPassword,
         }),
       });
 
       if (res.ok) {
+        const data = await res.json();
         setNewBranchName('');
         setNewEmail('');
-        setNewPassword('');
         setCreateDialogOpen(false);
+        alert(`Branch chief created. Shared password: ${data.sharedPassword || SHARED_BRANCH_CHIEF_PASSWORD}`);
         fetchData();
       } else {
         const data = await res.json();
@@ -439,24 +441,11 @@ export default function AdminDashboardClient() {
                           <p className="text-xs text-muted-foreground">Enter username only</p>
                         </div>
                         <div className="space-y-2">
-                          <Label htmlFor="password">Password</Label>
-                          <div className="relative">
-                            <Input
-                              id="password"
-                              type={showNewPassword ? 'text' : 'password'}
-                              placeholder="Create a strong password"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              required
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setShowNewPassword(!showNewPassword)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                            >
-                              {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                            </button>
+                          <Label>Shared Password</Label>
+                          <div className="rounded-md border border-input bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
+                            {SHARED_BRANCH_CHIEF_PASSWORD}
                           </div>
+                          <p className="text-xs text-muted-foreground">This same strong password will be used for every branch chief account.</p>
                         </div>
                         <Button type="submit" className="w-full" disabled={creating}>
                           {creating ? 'Creating...' : 'Create Account'}
