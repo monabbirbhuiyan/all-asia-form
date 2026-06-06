@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { 
   Users, Award, LogOut, Plus, Trash2, Upload, User 
 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -149,6 +150,10 @@ const BELT_RANKS = [
 ];
 
 const TRAINING_SEMINAR_OPTIONS = ['Yes', 'No'];
+
+const notify = (title: string, description?: string, variant: 'default' | 'destructive' = 'default') => {
+  toast({ title, description, variant });
+};
 
 export default function BranchDashboardClient({ branchName }: { branchName: string }) {
   const router = useRouter();
@@ -321,7 +326,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     try {
       const { width, height } = await readImageDimensions(file);
       if (!isTwoByTwoPointFiveRatio(width, height)) {
-        alert('Fighter photo must be in 2:2.5 ratio (2-inch width x 2.5-inch height).');
+        notify('Fighter photo must be in 2:2.5 ratio', 'Use a 2-inch width x 2.5-inch height image.', 'destructive');
         if (fighterPhotoInputRef.current) {
           fighterPhotoInputRef.current.value = '';
         }
@@ -333,7 +338,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       setFighterPhotoPreview(dataUrl);
     } catch (error) {
       console.error('Fighter photo validation failed:', error);
-      alert('Failed to process photo. Please try another image.');
+      notify('Failed to process photo', 'Please try another image.', 'destructive');
     }
   };
 
@@ -491,6 +496,70 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     }
   };
 
+  const validateFighterForm = () => {
+    const requiredTextFields = [
+      fighterForm.fullName,
+      fighterForm.phone,
+      fighterForm.email,
+      fighterForm.dateOfBirth,
+      fighterForm.country,
+      fighterForm.passportNumber,
+      fighterForm.branchChiefName,
+      fighterForm.address,
+      fighterForm.height,
+      fighterForm.weight,
+      fighterForm.trainingSeminar,
+      fighterForm.danTestParticipation,
+      fighterForm.beltColor,
+      fighterForm.beltRank,
+      fighterForm.internationalRegistrationNumber,
+    ];
+
+    if (requiredTextFields.some((value) => !String(value).trim()) || !fighterPhoto || !fighterPassportImage) {
+      notify('Please complete every fighter field', 'Upload both images before submitting.', 'destructive');
+      return false;
+    }
+
+    if (fighterForm.danTestParticipation === 'Yes' && !fighterForm.danTestQualificationNumber.trim()) {
+      notify('Dan Test qualification is required', 'Enter the Black Belt Card Number or 1 Kyu Certificate Number.', 'destructive');
+      return false;
+    }
+
+    if (tournamentEntries.length === 0 || tournamentEntries.some((entry) => !entry.tournamentName.trim() || !entry.achievement.trim())) {
+      notify('Please complete every tournament card', 'Each tournament entry needs both fields filled in.', 'destructive');
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateBranchChiefDetailForm = () => {
+    const requiredTextFields = [
+      branchChiefDetailForm.operatorRole,
+      branchChiefDetailForm.fullName,
+      branchChiefDetailForm.address,
+      branchChiefDetailForm.branchChiefCardNumber,
+      branchChiefDetailForm.internationalRegistrationNumber,
+      branchChiefDetailForm.country,
+      branchChiefDetailForm.phone,
+      branchChiefDetailForm.email,
+      branchChiefDetailForm.trainingSeminar,
+      branchChiefDetailForm.danTestParticipation,
+    ];
+
+    if (requiredTextFields.some((value) => !String(value).trim()) || !branchChiefDetailPhoto || !branchChiefDetailPassportImage) {
+      notify('Please complete every Branch Chief/Official Dojo Operator field', 'Upload both images before submitting.', 'destructive');
+      return false;
+    }
+
+    if (branchChiefDetailForm.danTestParticipation === 'Yes' && !branchChiefDetailForm.danTestQualificationNumber.trim()) {
+      notify('Dan Test qualification is required', 'Enter the Black Belt Card Number or 1 Kyu Certificate Number.', 'destructive');
+      return false;
+    }
+
+    return true;
+  };
+
   const addTournamentEntry = () => {
     setTournamentEntries((prev) => [...prev, { tournamentName: '', achievement: '' }]);
   };
@@ -517,12 +586,16 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
   const handleSubmitFighter = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validateFighterForm()) {
+      return;
+    }
+
     const hasInvalidTournamentEntry = tournamentEntries.some(
       (entry) => !entry.tournamentName.trim() || !entry.achievement.trim()
     );
 
     if (hasInvalidTournamentEntry) {
-      alert('Please complete all tournament cards. If there is no achievement, write N/A.');
+      notify('Please complete all tournament cards', 'If there is no achievement, write N/A.', 'destructive');
       return;
     }
 
@@ -566,11 +639,11 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to register fighter');
+        notify('Failed to register fighter', data.error || undefined, 'destructive');
       }
     } catch (error) {
       console.error('Submit fighter error:', error);
-      alert('Failed to register fighter');
+      notify('Failed to register fighter', 'Please try again.', 'destructive');
     } finally {
       setFighterSubmitting(false);
     }
@@ -600,11 +673,11 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to register official');
+        notify('Failed to register official', data.error || undefined, 'destructive');
       }
     } catch (error) {
       console.error('Submit official error:', error);
-      alert('Failed to register official');
+      notify('Failed to register official', 'Please try again.', 'destructive');
     } finally {
       setOfficialSubmitting(false);
     }
@@ -632,11 +705,11 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to register dan test');
+        notify('Failed to register dan test', data.error || undefined, 'destructive');
       }
     } catch (error) {
       console.error('Submit dan test error:', error);
-      alert('Failed to register dan test');
+      notify('Failed to register dan test', 'Please try again.', 'destructive');
     } finally {
       setDanTestSubmitting(false);
     }
@@ -644,6 +717,11 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
 
   const handleSubmitBranchChiefDetail = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateBranchChiefDetailForm()) {
+      return;
+    }
+
     setBranchChiefDetailSubmitting(true);
 
     try {
@@ -666,11 +744,11 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to submit branch chief/dojo operator details');
+        notify('Failed to submit Branch Chief/Official Dojo Operator details', data.error || undefined, 'destructive');
       }
     } catch (error) {
-      console.error('Submit branch chief details error:', error);
-      alert('Failed to submit branch chief/dojo operator details');
+      console.error('Submit Branch Chief/Official Dojo Operator details error:', error);
+      notify('Failed to submit Branch Chief/Official Dojo Operator details', 'Please try again.', 'destructive');
     } finally {
       setBranchChiefDetailSubmitting(false);
     }
@@ -756,7 +834,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
             </div>
             <div>
               <h1 className="font-bold text-lg text-foreground">{branchName}</h1>
-              <p className="text-xs text-muted-foreground">Branch Chief/Dojo Operator Portal</p>
+              <p className="text-xs text-muted-foreground">Branch Chief/Official Dojo Operator Portal</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -781,7 +859,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Branch Chief / Dojo Operator</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Branch Chief / Official Dojo Operator</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -794,7 +872,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
         {/* Tabs */}
         <Tabs defaultValue="fighters" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="branch-chief-details">Branch Chief / Dojo Operator</TabsTrigger>
+            <TabsTrigger value="branch-chief-details">Branch Chief / Official Dojo Operator</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
           </TabsList>
 
@@ -846,6 +924,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                               accept="image/*"
                               onChange={handleFighterPhotoChange}
                               className="hidden"
+                              required
                               id="photo-upload"
                             />
                             <Button
@@ -885,6 +964,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                               accept="image/*"
                               onChange={handleFighterPassportChange}
                               className="hidden"
+                              required
                               id="fighter-passport-upload"
                             />
                             <Button
@@ -921,6 +1001,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             placeholder="Enter phone number"
                             value={fighterForm.phone}
                             onChange={(e) => setFighterForm({ ...fighterForm, phone: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -931,6 +1012,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             placeholder="Enter email"
                             value={fighterForm.email}
                             onChange={(e) => setFighterForm({ ...fighterForm, email: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -940,6 +1022,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             type="date"
                             value={fighterForm.dateOfBirth}
                             onChange={(e) => setFighterForm({ ...fighterForm, dateOfBirth: e.target.value })}
+                            required
                           />
                         </div>
                       </div>
@@ -952,6 +1035,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             placeholder="Enter country"
                             value={fighterForm.country}
                             onChange={(e) => setFighterForm({ ...fighterForm, country: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -961,18 +1045,20 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             placeholder="Enter passport number"
                             value={fighterForm.passportNumber}
                             onChange={(e) => setFighterForm({ ...fighterForm, passportNumber: e.target.value })}
+                            required
                           />
                         </div>
                       </div>
 
                       {/* Branch Chief Name */}
                       <div className="space-y-2">
-                        <Label htmlFor="branchChiefName">Branch Chief Name</Label>
+                        <Label htmlFor="branchChiefName">Branch Chief/Official Dojo Operator Name</Label>
                         <Input
                           id="branchChiefName"
-                          placeholder="Enter branch chief name"
+                          placeholder="Enter Branch Chief/Official Dojo Operator name"
                           value={fighterForm.branchChiefName}
                           onChange={(e) => setFighterForm({ ...fighterForm, branchChiefName: e.target.value })}
+                          required
                         />
                       </div>
 
@@ -985,6 +1071,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           value={fighterForm.address}
                           onChange={(e) => setFighterForm({ ...fighterForm, address: e.target.value })}
                           rows={2}
+                          required
                         />
                       </div>
 
@@ -1000,6 +1087,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             placeholder="e.g., 175"
                             value={fighterForm.height}
                             onChange={(e) => setFighterForm({ ...fighterForm, height: sanitizeIntegerInput(e.target.value) })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -1012,6 +1100,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             placeholder="e.g., 70"
                             value={fighterForm.weight}
                             onChange={(e) => setFighterForm({ ...fighterForm, weight: sanitizeIntegerInput(e.target.value) })}
+                            required
                           />
                         </div>
                       </div>
@@ -1076,7 +1165,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             value={fighterForm.beltColor}
                             onValueChange={(value) => setFighterForm({ ...fighterForm, beltColor: value })}
                           >
-                            <SelectTrigger>
+                              <SelectTrigger>
                               <SelectValue placeholder="Select belt color" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1094,7 +1183,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             value={fighterForm.beltRank}
                             onValueChange={(value) => setFighterForm({ ...fighterForm, beltRank: value })}
                           >
-                            <SelectTrigger>
+                              <SelectTrigger>
                               <SelectValue placeholder="Select rank" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1116,6 +1205,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           placeholder="Enter registration number"
                           value={fighterForm.internationalRegistrationNumber}
                           onChange={(e) => setFighterForm({ ...fighterForm, internationalRegistrationNumber: e.target.value })}
+                          required
                         />
                       </div>
 
@@ -1195,7 +1285,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                       <TableRow>
                         <TableHead>Photo</TableHead>
                         <TableHead>Full Name</TableHead>
-                        <TableHead>Branch Chief Name</TableHead>
+                        <TableHead>Branch Chief/Official Dojo Operator Name</TableHead>
                         <TableHead>Height</TableHead>
                         <TableHead>Weight</TableHead>
                         <TableHead>Belt</TableHead>
@@ -1255,13 +1345,13 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
             </Card>
           </TabsContent>
 
-          {/* Branch Chief / Dojo Operator Tab */}
+          {/* Branch Chief / Official Dojo Operator Tab */}
           <TabsContent value="branch-chief-details">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Branch Chief / Dojo Operator</CardTitle>
-                  <CardDescription>Submit branch chief or dojo operator details</CardDescription>
+                  <CardTitle>Branch Chief / Official Dojo Operator</CardTitle>
+                  <CardDescription>Submit Branch Chief/Official Dojo Operator details</CardDescription>
                 </div>
                 <Dialog
                   open={branchChiefDetailDialogOpen}
@@ -1278,7 +1368,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Branch Chief / Dojo Operator Details</DialogTitle>
+                      <DialogTitle>Branch Chief / Official Dojo Operator Details</DialogTitle>
                       <DialogDescription>
                         Fill in the profile and document details.
                       </DialogDescription>
@@ -1294,7 +1384,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             <SelectValue placeholder="Select role" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Branch Chief">Branch Chief</SelectItem>
+                            <SelectItem value="Branch Chief">Branch Chief / Official Dojo Operator</SelectItem>
                             <SelectItem value="Dojo Operator">Dojo Operator</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1317,6 +1407,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                               accept="image/*"
                               onChange={handleBranchChiefDetailPhotoChange}
                               className="hidden"
+                              required
                               id="branch-chief-detail-photo"
                             />
                             <Button type="button" variant="outline" onClick={() => branchChiefDetailPhotoInputRef.current?.click()}>
@@ -1344,6 +1435,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                               accept="image/*"
                               onChange={handleBranchChiefDetailPassportChange}
                               className="hidden"
+                              required
                               id="branch-chief-detail-passport"
                             />
                             <Button type="button" variant="outline" onClick={() => branchChiefDetailPassportInputRef.current?.click()}>
@@ -1371,16 +1463,18 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           value={branchChiefDetailForm.address}
                           onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, address: e.target.value })}
                           rows={2}
+                          required
                         />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <Label htmlFor="branchChiefCardNo">Branch Chief Card Number</Label>
+                          <Label htmlFor="branchChiefCardNo">Branch Chief / Official Dojo Operator Card Number</Label>
                           <Input
                             id="branchChiefCardNo"
                             value={branchChiefDetailForm.branchChiefCardNumber}
                             onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, branchChiefCardNumber: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -1389,6 +1483,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             id="branchChiefIntlReg"
                             value={branchChiefDetailForm.internationalRegistrationNumber}
                             onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, internationalRegistrationNumber: e.target.value })}
+                            required
                           />
                         </div>
                       </div>
@@ -1400,6 +1495,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             id="branchChiefCountry"
                             value={branchChiefDetailForm.country}
                             onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, country: e.target.value })}
+                            required
                           />
                         </div>
                         <div className="space-y-2">
@@ -1408,6 +1504,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             id="branchChiefPhone"
                             value={branchChiefDetailForm.phone}
                             onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, phone: e.target.value })}
+                            required
                           />
                         </div>
                       </div>
@@ -1419,6 +1516,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                           type="email"
                           value={branchChiefDetailForm.email}
                           onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, email: e.target.value })}
+                          required
                         />
                       </div>
 

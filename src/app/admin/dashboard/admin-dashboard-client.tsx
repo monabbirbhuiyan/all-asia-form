@@ -7,6 +7,7 @@ import {
   Trash2, ToggleLeft, ToggleRight, Sparkles,
   Pencil
 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -59,6 +60,10 @@ interface Fighter {
 }
 
 const SHARED_BRANCH_CHIEF_PASSWORD = 'AllAsia2026#Kyoku!Access';
+
+const notify = (title: string, description?: string, variant: 'default' | 'destructive' = 'default') => {
+  toast({ title, description, variant });
+};
 
 export default function AdminDashboardClient() {
   const router = useRouter();
@@ -128,15 +133,18 @@ export default function AdminDashboardClient() {
         setNewBranchName('');
         setNewEmail('');
         setCreateDialogOpen(false);
-        alert(`Branch chief created. Shared password: ${data.sharedPassword || SHARED_BRANCH_CHIEF_PASSWORD}`);
+        notify(
+          'Branch Chief/Official Dojo Operator created',
+          `Shared password: ${data.sharedPassword || SHARED_BRANCH_CHIEF_PASSWORD}`
+        );
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to create branch chief');
+        notify('Failed to create Branch Chief/Official Dojo Operator', data.error || undefined, 'destructive');
       }
     } catch (error) {
       console.error('Create error:', error);
-      alert('Failed to create branch chief');
+      notify('Failed to create Branch Chief/Official Dojo Operator', 'Please try again.', 'destructive');
     } finally {
       setCreating(false);
     }
@@ -169,11 +177,11 @@ export default function AdminDashboardClient() {
         fetchData();
       } else {
         const data = await res.json();
-        alert(data.error || 'Failed to update branch chief');
+        notify('Failed to update Branch Chief/Official Dojo Operator', data.error || undefined, 'destructive');
       }
     } catch (error) {
-      console.error('Edit branch chief error:', error);
-      alert('Failed to update branch chief');
+      console.error('Edit Branch Chief/Official Dojo Operator error:', error);
+      notify('Failed to update Branch Chief/Official Dojo Operator', 'Please try again.', 'destructive');
     } finally {
       setEditing(false);
     }
@@ -287,7 +295,7 @@ export default function AdminDashboardClient() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="border-border/60 bg-card/75 shadow-sm backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Branch Chiefs</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">Branch Chief/Official Dojo Operators</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -312,7 +320,7 @@ export default function AdminDashboardClient() {
         {/* Tabs */}
         <Tabs defaultValue="branch-chiefs" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2 rounded-xl border border-border/60 bg-card/80 p-1 backdrop-blur-sm md:w-fit md:min-w-80">
-            <TabsTrigger value="branch-chiefs">Branch Chiefs</TabsTrigger>
+            <TabsTrigger value="branch-chiefs">Branch Chief/Official Dojo Operators</TabsTrigger>
             <TabsTrigger value="fighters">Fighters</TabsTrigger>
           </TabsList>
 
@@ -321,8 +329,8 @@ export default function AdminDashboardClient() {
             <Card className="border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                  <CardTitle>Branch Chiefs</CardTitle>
-                  <CardDescription>Manage branch chief accounts</CardDescription>
+                  <CardTitle>Branch Chief/Official Dojo Operators</CardTitle>
+                  <CardDescription>Manage Branch Chief/Official Dojo Operator accounts</CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" className="rounded-xl" onClick={() => exportCSV('branch_chiefs')}>
@@ -333,19 +341,19 @@ export default function AdminDashboardClient() {
                     <DialogTrigger asChild>
                       <Button size="sm" className="rounded-xl">
                         <Plus className="mr-2 h-4 w-4" />
-                        Add Branch Chief
+                        Add Branch Chief/Official Dojo Operator
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Create Branch Chief Account</DialogTitle>
+                        <DialogTitle>Create Branch Chief/Official Dojo Operator Account</DialogTitle>
                         <DialogDescription>
-                          Create a new login for a branch chief to register their fighters.
+                          Create a new login for a Branch Chief/Official Dojo Operator to register their fighters.
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleCreateBranchChief} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="branchName">Branch Name</Label>
+                          <Label htmlFor="branchName">Branch Chief/Official Dojo Operator Branch Name</Label>
                           <Input
                             id="branchName"
                             placeholder="e.g., Tokyo Branch"
@@ -375,7 +383,7 @@ export default function AdminDashboardClient() {
                           <div className="rounded-md border border-input bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
                             {SHARED_BRANCH_CHIEF_PASSWORD}
                           </div>
-                          <p className="text-xs text-muted-foreground">This same strong password will be used for every branch chief account.</p>
+                          <p className="text-xs text-muted-foreground">This same strong password will be used for every Branch Chief/Official Dojo Operator account.</p>
                         </div>
                         <Button type="submit" className="w-full" disabled={creating}>
                           {creating ? 'Creating...' : 'Create Account'}
@@ -432,25 +440,26 @@ export default function AdminDashboardClient() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => openEditBranchChief(chief)}
-                                  title="Edit Branch Chief"
+                                  title="Edit Branch Chief/Official Dojo Operator"
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               </DialogTrigger>
                               <DialogContent>
                                 <DialogHeader>
-                                  <DialogTitle>Edit Branch Chief</DialogTitle>
+                                  <DialogTitle>Edit Branch Chief/Official Dojo Operator</DialogTitle>
                                   <DialogDescription>
-                                    Update branch details for {chief.branch_name}
+                                    Update Branch Chief/Official Dojo Operator details for {chief.branch_name}
                                   </DialogDescription>
                                 </DialogHeader>
                                 <div className="space-y-4">
                                   <div className="space-y-2">
-                                    <Label htmlFor="editBranchName">Branch Name</Label>
+                                    <Label htmlFor="editBranchName">Branch Chief/Official Dojo Operator Branch Name</Label>
                                     <Input
                                       id="editBranchName"
                                       value={editBranchName}
                                       onChange={(e) => setEditBranchName(e.target.value)}
+                                      required
                                     />
                                   </div>
                                   <div className="space-y-2">
@@ -462,6 +471,7 @@ export default function AdminDashboardClient() {
                                         value={editEmail}
                                         onChange={(e) => setEditEmail(e.target.value.split('@')[0])}
                                         className="border-0 focus:ring-0"
+                                        required
                                       />
                                       <span className="whitespace-nowrap bg-muted px-3 py-2 font-medium text-muted-foreground">@kyokushinbd.com</span>
                                     </div>
@@ -488,7 +498,7 @@ export default function AdminDashboardClient() {
                     {branchChiefs.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No branch chiefs registered yet
+                          No Branch Chief/Official Dojo Operator accounts registered yet
                         </TableCell>
                       </TableRow>
                     )}

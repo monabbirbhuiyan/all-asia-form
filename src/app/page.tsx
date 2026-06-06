@@ -33,15 +33,15 @@ export default function HomePage() {
   const faqs = [
     {
       question: 'Who can register participants?',
-      answer: 'Only approved branch chief accounts can submit fighter, official, and dan test registrations.',
+      answer: 'Only approved Branch Chief/Official Dojo Operator accounts can submit fighter, official, and dan test registrations.',
     },
     {
       question: 'Can I edit records after submission?',
-      answer: 'Branch chiefs can manage their own records from their dashboard. Admins can manage all records globally.',
+      answer: 'Branch Chief/Official Dojo Operators can manage their own records from their dashboard. Admins can manage all records globally.',
     },
     {
       question: 'How do we export records?',
-      answer: 'Admins can export CSV from each dashboard section for fighters, officials, branch chiefs, and dan tests.',
+      answer: 'Admins can export CSV from each dashboard section for fighters, officials, Branch Chief/Official Dojo Operator records, and dan tests.',
     },
   ];
 
@@ -70,7 +70,7 @@ export default function HomePage() {
               <Button variant="outline" size="sm" className="rounded-xl">Admin Login</Button>
             </Link>
             <Link href="/branch/login">
-              <Button size="sm" className="rounded-xl">Branch Chief Login</Button>
+              <Button size="sm" className="rounded-xl">Branch Chief/Official Dojo Operator Login</Button>
             </Link>
           </nav>
         </div>
@@ -104,14 +104,14 @@ export default function HomePage() {
               <span className="text-primary">Karate Championship 2026</span>
             </h1>
             <p className="mx-auto max-w-2xl text-pretty text-lg text-muted-foreground">
-              Welcome to the official online registration system for Kyokushin Karate&apos;s prestigious continental championship. Branch Chiefs can register their fighters and officials through this secure portal.
+              Welcome to the official online registration system for Kyokushin Karate&apos;s prestigious continental championship. Branch Chief/Official Dojo Operators can register their fighters and officials through this secure portal.
             </p>
 
             <div className="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
               <Link href="/branch/login">
                 <Button size="lg" className="w-full rounded-xl sm:w-auto">
                   <Users className="mr-2 h-5 w-5" />
-                  Branch Chief Portal
+                  Branch Chief/Official Dojo Operator Portal
                 </Button>
               </Link>
               <Link href="/admin/login">
