@@ -17,6 +17,7 @@ export async function GET() {
         bc.id,
         bc."branchName" AS branch_name,
         bc.email,
+        bc."contactEmail" AS contact_email,
         bc."isActive" AS is_active,
         bc."createdAt" AS created_at,
         bc."updatedAt" AS updated_at,
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { branchName, email } = await request.json();
+    const { branchName, email, contactEmail } = await request.json();
 
     if (!branchName || !email) {
       return NextResponse.json(
@@ -80,19 +81,27 @@ export async function POST(request: NextRequest) {
     const passwordHash = await hashPassword(SHARED_BRANCH_CHIEF_PASSWORD);
 
     const result = await sql`
-      INSERT INTO branch_chiefs ("branchName", email, "passwordHash", "updatedAt")
-      VALUES (${branchName}, ${fullEmail}, ${passwordHash}, CURRENT_TIMESTAMP)
+      INSERT INTO branch_chiefs ("branchName", email, "contactEmail", "passwordHash", "updatedAt")
+      VALUES (${branchName}, ${fullEmail}, ${contactEmail || null}, ${passwordHash}, CURRENT_TIMESTAMP)
       RETURNING
         id,
         "branchName" AS branch_name,
         email,
+        "contactEmail" AS contact_email,
         "isActive" AS is_active,
         "createdAt" AS created_at
     `;
 
     return NextResponse.json(
       {
-        branchChief: result[0],
+        branchChief: {
+          id: result[0].id,
+          branch_name: result[0].branch_name,
+          email: result[0].email,
+          contact_email: result[0].contact_email,
+          is_active: result[0].is_active,
+          created_at: result[0].created_at,
+        },
         sharedPassword: SHARED_BRANCH_CHIEF_PASSWORD,
       },
       { status: 201 }

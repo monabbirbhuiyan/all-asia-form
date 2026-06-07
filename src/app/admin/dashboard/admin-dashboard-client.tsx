@@ -32,6 +32,7 @@ interface BranchChief {
   id: number;
   branch_name: string;
   email: string;
+  contact_email?: string | null;
   is_active: boolean;
   created_at: string;
   detail_id?: number | null;
@@ -84,12 +85,14 @@ export default function AdminDashboardClient() {
   // New branch chief form
   const [newBranchName, setNewBranchName] = useState('');
   const [newEmail, setNewEmail] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const [editBranchChiefId, setEditBranchChiefId] = useState<number | null>(null);
   const [editBranchName, setEditBranchName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editContactEmail, setEditContactEmail] = useState('');
   const [editing, setEditing] = useState(false);
 
   useEffect(() => {
@@ -140,6 +143,7 @@ export default function AdminDashboardClient() {
         body: JSON.stringify({
           branchName: newBranchName,
           email: newEmail,
+          contactEmail: newContactEmail,
         }),
       });
 
@@ -147,6 +151,7 @@ export default function AdminDashboardClient() {
         const data = await res.json();
         setNewBranchName('');
         setNewEmail('');
+        setNewContactEmail('');
         setCreateDialogOpen(false);
         notify(
           'Branch Chief/Official Dojo Operator created',
@@ -169,6 +174,7 @@ export default function AdminDashboardClient() {
     setEditBranchChiefId(chief.id);
     setEditBranchName(chief.branch_name);
     setEditEmail(chief.email.includes('@') ? chief.email.split('@')[0] : chief.email);
+    setEditContactEmail(chief.contact_email || '');
   };
 
   const handleEditBranchChief = async (id: number) => {
@@ -182,6 +188,7 @@ export default function AdminDashboardClient() {
         body: JSON.stringify({
           branchName: editBranchName,
           email: editEmail,
+          contactEmail: editContactEmail,
         }),
       });
 
@@ -189,6 +196,7 @@ export default function AdminDashboardClient() {
         setEditBranchChiefId(null);
         setEditBranchName('');
         setEditEmail('');
+        setEditContactEmail('');
         fetchData();
       } else {
         const data = await res.json();
@@ -274,6 +282,59 @@ export default function AdminDashboardClient() {
     }
 
     return 'jpg';
+  };
+
+  const handleDownloadBranchChiefImagesZip = async (chief: BranchChief) => {
+    if (!chief.photo_url && !chief.passport_image_url) {
+      notify('No images to download', 'This Branch Chief has no uploaded images.', 'destructive');
+      return;
+    }
+
+    setDownloadingZipFor(chief.id);
+
+    try {
+      const zip = new JSZip();
+      const safeName = sanitizeFileName(chief.full_name || chief.branch_name) || `chief_${chief.id}`;
+
+      if (chief.photo_url) {
+        const photoRes = await fetch(chief.photo_url);
+        if (!photoRes.ok) {
+          throw new Error('Failed to fetch Branch Chief photo');
+        }
+        const photoBlob = await photoRes.blob();
+        const photoExt = resolveImageExtension(chief.photo_url, photoBlob.type || '');
+        const photoBuffer = await photoBlob.arrayBuffer();
+        zip.file(`${safeName}_photo.${photoExt}`, photoBuffer);
+      }
+
+      if (chief.passport_image_url) {
+        const passportRes = await fetch(chief.passport_image_url);
+        if (!passportRes.ok) {
+          throw new Error('Failed to fetch passport image');
+        }
+        const passportBlob = await passportRes.blob();
+        const passportExt = resolveImageExtension(chief.passport_image_url, passportBlob.type || '');
+        const passportBuffer = await passportBlob.arrayBuffer();
+        zip.file(`${safeName}_passport.${passportExt}`, passportBuffer);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const downloadUrl = URL.createObjectURL(zipBlob);
+
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${safeName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download ZIP error:', error);
+      notify('Failed to download images ZIP', 'Please try again.', 'destructive');
+    } finally {
+      setDownloadingZipFor(null);
+    }
   };
 
   const handleDownloadFighterImagesZip = async (fighter: Fighter) => {
@@ -477,6 +538,16 @@ export default function AdminDashboardClient() {
                           <p className="text-xs text-muted-foreground">Enter username only</p>
                         </div>
                         <div className="space-y-2">
+                          <Label htmlFor="contactEmail">Branch Chief/Dojo operator Email</Label>
+                          <Input
+                            id="contactEmail"
+                            type="email"
+                            placeholder="Enter Branch Chief/Dojo operator email"
+                            value={newContactEmail}
+                            onChange={(e) => setNewContactEmail(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
                           <Label>Shared Password</Label>
                           <div className="rounded-md border border-input bg-muted/40 px-3 py-2 text-sm font-medium text-foreground">
                             {SHARED_BRANCH_CHIEF_PASSWORD}
@@ -527,45 +598,58 @@ export default function AdminDashboardClient() {
                           </span>
                         </div>
 
-                        <div className="mb-3 grid grid-cols-2 gap-3 text-sm">
-                          <div className="rounded-lg bg-muted/40 px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Role</p>
-                            <p className="font-medium">{chief.operator_role || '-'}</p>
-                          </div>
-                          <div className="rounded-lg bg-muted/40 px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Number</p>
-                            <p className="font-medium break-all">{chief.branch_chief_card_number || '-'}</p>
-                          </div>
-                          <div className="rounded-lg bg-muted/40 px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p>
-                            <p className="font-medium">{chief.phone || '-'}</p>
-                          </div>
-                          <div className="rounded-lg bg-muted/40 px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Country</p>
-                            <p className="font-medium">{chief.country || '-'}</p>
-                          </div>
-                          <div className="col-span-2 rounded-lg bg-muted/40 px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Intl. Reg. No.</p>
-                            <p className="font-medium break-all">{chief.international_registration_number || '-'}</p>
-                          </div>
-                          <div className="col-span-2 rounded-lg bg-muted/40 px-3 py-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Address</p>
-                            <p className="font-medium">{chief.address || '-'}</p>
-                          </div>
-                        </div>
+<div className="mb-3 grid grid-cols-2 gap-3 text-sm">
+                           <div className="rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Role</p>
+                             <p className="font-medium">{chief.operator_role || '-'}</p>
+                           </div>
+                           <div className="rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Number</p>
+                             <p className="font-medium break-all">{chief.branch_chief_card_number || '-'}</p>
+                           </div>
+                           <div className="rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p>
+                             <p className="font-medium">{chief.phone || '-'}</p>
+                           </div>
+                           <div className="rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Contact Email</p>
+                             <p className="font-medium">{chief.contact_email || '-'}</p>
+                           </div>
+                           <div className="rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Country</p>
+                             <p className="font-medium">{chief.country || '-'}</p>
+                           </div>
+                           <div className="col-span-2 rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Intl. Reg. No.</p>
+                             <p className="font-medium break-all">{chief.international_registration_number || '-'}</p>
+                           </div>
+                           <div className="col-span-2 rounded-lg bg-muted/40 px-3 py-2">
+                             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Address</p>
+                             <p className="font-medium">{chief.address || '-'}</p>
+                           </div>
+                         </div>
 
-                        <div className="mb-3 text-[11px] text-muted-foreground">
-                          <p>Account Created: {new Date(chief.created_at).toLocaleDateString()}</p>
-                          <p>
-                            Form Updated: {chief.detail_updated_at ? new Date(chief.detail_updated_at).toLocaleDateString() : 'Not submitted yet'}
-                          </p>
-                        </div>
+                         <div className="mb-3 text-[11px] text-muted-foreground">
+                           <p>Account Created: {new Date(chief.created_at).toLocaleDateString()}</p>
+                           <p>
+                             Form Updated: {chief.detail_updated_at ? new Date(chief.detail_updated_at).toLocaleDateString() : 'Not submitted yet'}
+                           </p>
+                         </div>
 
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleToggleActive(chief.id, chief.is_active)}
+                         <div className="flex justify-end gap-1">
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => handleDownloadBranchChiefImagesZip(chief)}
+                             disabled={downloadingZipFor === chief.id || (!chief.photo_url && !chief.passport_image_url)}
+                             title="Download Branch Chief photo and passport images as ZIP"
+                           >
+                             <Download className="h-4 w-4" />
+                           </Button>
+                           <Button
+                             variant="ghost"
+                             size="sm"
+                             onClick={() => handleToggleActive(chief.id, chief.is_active)}
                             title={chief.is_active ? 'Deactivate' : 'Activate'}
                           >
                             {chief.is_active ? (
@@ -615,6 +699,16 @@ export default function AdminDashboardClient() {
                                     />
                                     <span className="whitespace-nowrap bg-muted px-3 py-2 font-medium text-muted-foreground">@kyokushinbd.com</span>
                                   </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="editContactEmail">Branch Chief/Dojo operator Email</Label>
+                                  <Input
+                                    id="editContactEmail"
+                                    type="email"
+                                    placeholder="Enter Branch Chief/Dojo operator email"
+                                    value={editContactEmail}
+                                    onChange={(e) => setEditContactEmail(e.target.value)}
+                                  />
                                 </div>
                                 <Button onClick={() => handleEditBranchChief(chief.id)} className="w-full" disabled={editing}>
                                   {editing ? 'Saving...' : 'Save Changes'}

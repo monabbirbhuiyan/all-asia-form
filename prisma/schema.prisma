@@ -25,6 +25,7 @@ model BranchChief {
   id            Int     @id @default(autoincrement())
   branchName    String  @unique
   email         String  @unique
+  contactEmail  String?
   passwordHash  String
   isActive      Boolean @default(true)
   createdAt     DateTime @default(now())

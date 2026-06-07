@@ -246,7 +246,6 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
     branchChiefCardNumber: '',
     country: '',
     phone: '',
-    email: '',
     internationalRegistrationNumber: '',
     trainingSeminar: '',
     danTestParticipation: '',
@@ -478,7 +477,6 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       branchChiefCardNumber: '',
       country: '',
       phone: '',
-      email: '',
       internationalRegistrationNumber: '',
       trainingSeminar: '',
       danTestParticipation: '',
@@ -542,7 +540,6 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
       branchChiefDetailForm.internationalRegistrationNumber,
       branchChiefDetailForm.country,
       branchChiefDetailForm.phone,
-      branchChiefDetailForm.email,
       branchChiefDetailForm.trainingSeminar,
       branchChiefDetailForm.danTestParticipation,
     ];
@@ -1102,7 +1099,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             onChange={(e) => setFighterForm({ ...fighterForm, weight: sanitizeIntegerInput(e.target.value) })}
                             required
                           />
-                        </div>
+</div>
                       </div>
 
                       <div className="space-y-2">
@@ -1506,18 +1503,7 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
                             onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, phone: e.target.value })}
                             required
                           />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="branchChiefEmail">Email</Label>
-                        <Input
-                          id="branchChiefEmail"
-                          type="email"
-                          value={branchChiefDetailForm.email}
-                          onChange={(e) => setBranchChiefDetailForm({ ...branchChiefDetailForm, email: e.target.value })}
-                          required
-                        />
+</div>
                       </div>
 
                       <div className="space-y-2">
@@ -1581,51 +1567,49 @@ export default function BranchDashboardClient({ branchName }: { branchName: stri
               </CardHeader>
               <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Country</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Dan Test</TableHead>
-                      <TableHead>Training Seminar</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {branchChiefDetails.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell>{entry.operator_role || '-'}</TableCell>
-                        <TableCell className="font-medium">{entry.full_name}</TableCell>
-                        <TableCell>{entry.country || '-'}</TableCell>
-                        <TableCell>{entry.phone || '-'}</TableCell>
-                        <TableCell>{entry.email || '-'}</TableCell>
-                        <TableCell>{entry.dan_test_participation || '-'}</TableCell>
-                        <TableCell>{entry.training_seminar || '-'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteBranchChiefDetail(entry.id)}
-                            className="text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {branchChiefDetails.length === 0 && (
+<TableHeader>
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                          No entries yet. Click &quot;Add Details&quot; to submit one.
-                        </TableCell>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Country</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Dan Test</TableHead>
+                        <TableHead>Training Seminar</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {branchChiefDetails.map((entry) => (
+                        <TableRow key={entry.id}>
+                          <TableCell>{entry.operator_role || '-'}</TableCell>
+                          <TableCell className="font-medium">{entry.full_name}</TableCell>
+                          <TableCell>{entry.country || '-'}</TableCell>
+                          <TableCell>{entry.phone || '-'}</TableCell>
+                          <TableCell>{entry.dan_test_participation || '-'}</TableCell>
+                          <TableCell>{entry.training_seminar || '-'}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteBranchChiefDetail(entry.id)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+</TableRow>
+                      ))}
+                      {branchChiefDetails.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                            No entries yet. Click &quot;Add Details&quot; to submit one.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
           </TabsContent>
         </Tabs>
       </main>

@@ -39,7 +39,7 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { branchName, email, isActive, password } = await request.json();
+    const { branchName, email, contactEmail, isActive, password } = await request.json();
 
     let updated = false;
 
@@ -57,6 +57,15 @@ export async function PATCH(
       await sql`
         UPDATE branch_chiefs
         SET email = ${normalizedEmail}, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE id = ${id}
+      `;
+      updated = true;
+    }
+
+    if (typeof contactEmail === 'string' || contactEmail === null) {
+      await sql`
+        UPDATE branch_chiefs
+        SET "contactEmail" = ${contactEmail || null}, "updatedAt" = CURRENT_TIMESTAMP
         WHERE id = ${id}
       `;
       updated = true;
