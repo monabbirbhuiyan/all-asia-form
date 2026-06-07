@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import JSZip from 'jszip';
 import { 
   Users, Shield, Award, Download, Plus, LogOut, 
   Trash2, ToggleLeft, ToggleRight, Sparkles,
@@ -21,14 +22,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
   Tabs,
   TabsContent,
   TabsList,
@@ -41,6 +34,22 @@ interface BranchChief {
   email: string;
   is_active: boolean;
   created_at: string;
+  detail_id?: number | null;
+  full_name?: string | null;
+  operator_role?: string | null;
+  address?: string | null;
+  branch_chief_card_number?: string | null;
+  country?: string | null;
+  phone?: string | null;
+  detail_email?: string | null;
+  international_registration_number?: string | null;
+  training_seminar?: string | null;
+  dan_test_participation?: string | null;
+  dan_test_qualification_number?: string | null;
+  photo_url?: string | null;
+  passport_image_url?: string | null;
+  detail_created_at?: string | null;
+  detail_updated_at?: string | null;
 }
 
 interface Fighter {
@@ -69,6 +78,7 @@ export default function AdminDashboardClient() {
   const router = useRouter();
   const [branchChiefs, setBranchChiefs] = useState<BranchChief[]>([]);
   const [fighters, setFighters] = useState<Fighter[]>([]);
+  const [downloadingZipFor, setDownloadingZipFor] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   
   // New branch chief form
@@ -84,10 +94,15 @@ export default function AdminDashboardClient() {
 
   useEffect(() => {
     fetchData();
+
+    const pollInterval = setInterval(() => {
+      fetchData();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const fetchData = async () => {
-    setLoading(true);
     try {
       const [chiefsRes, fightersRes] = await Promise.all([
         fetch('/api/branch-chiefs'),
@@ -235,6 +250,85 @@ export default function AdminDashboardClient() {
     window.open(`/api/export?type=${type}`, '_blank');
   };
 
+  const sanitizeFileName = (value: string) =>
+    value
+      .trim()
+      .replace(/[^a-zA-Z0-9\s_-]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_')
+      .toLowerCase();
+
+  const resolveImageExtension = (url: string, mimeType: string) => {
+    if (mimeType.includes('png')) return 'png';
+    if (mimeType.includes('webp')) return 'webp';
+    if (mimeType.includes('gif')) return 'gif';
+    if (mimeType.includes('jpeg') || mimeType.includes('jpg')) return 'jpg';
+
+    const cleanUrl = url.split('?')[0];
+    const fileName = cleanUrl.split('/').pop() || '';
+    const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
+    const ext = extMatch?.[1]?.toLowerCase();
+
+    if (ext && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) {
+      return ext === 'jpeg' ? 'jpg' : ext;
+    }
+
+    return 'jpg';
+  };
+
+  const handleDownloadFighterImagesZip = async (fighter: Fighter) => {
+    if (!fighter.photo_url && !fighter.passport_image_url) {
+      notify('No images to download', 'This fighter has no uploaded images.', 'destructive');
+      return;
+    }
+
+    setDownloadingZipFor(fighter.id);
+
+    try {
+      const zip = new JSZip();
+      const safeName = sanitizeFileName(fighter.full_name) || `fighter_${fighter.id}`;
+
+      if (fighter.photo_url) {
+        const photoRes = await fetch(fighter.photo_url);
+        if (!photoRes.ok) {
+          throw new Error('Failed to fetch fighter photo');
+        }
+        const photoBlob = await photoRes.blob();
+        const photoExt = resolveImageExtension(fighter.photo_url, photoBlob.type || '');
+        const photoBuffer = await photoBlob.arrayBuffer();
+        zip.file(`${safeName}_fighter_photo.${photoExt}`, photoBuffer);
+      }
+
+      if (fighter.passport_image_url) {
+        const passportRes = await fetch(fighter.passport_image_url);
+        if (!passportRes.ok) {
+          throw new Error('Failed to fetch passport image');
+        }
+        const passportBlob = await passportRes.blob();
+        const passportExt = resolveImageExtension(fighter.passport_image_url, passportBlob.type || '');
+        const passportBuffer = await passportBlob.arrayBuffer();
+        zip.file(`${safeName}_passport_image.${passportExt}`, passportBuffer);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const downloadUrl = URL.createObjectURL(zipBlob);
+
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = `${safeName}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Download ZIP error:', error);
+      notify('Failed to download images ZIP', 'Please try again.', 'destructive');
+    } finally {
+      setDownloadingZipFor(null);
+    }
+  };
+
   const formatWholeNumber = (value: number | string | null | undefined, unit: string) => {
     if (value === null || value === undefined || value === '') return '-';
     const numericValue = Number(value);
@@ -284,6 +378,10 @@ export default function AdminDashboardClient() {
             <p className="text-xs font-medium uppercase tracking-[0.16em] text-primary">Control Center</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Competition Operations Dashboard</h2>
             <p className="text-sm text-muted-foreground">Monitor registrations, manage credentials, and export records.</p>
+            <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-primary">Shared Password</span>
+              <span className="text-sm font-mono text-foreground">{SHARED_BRANCH_CHIEF_PASSWORD}</span>
+            </div>
           </div>
           <div className="hidden rounded-xl border border-primary/30 bg-primary/10 px-3 py-2 text-primary md:flex md:items-center md:gap-2">
             <Sparkles className="h-4 w-4" />
@@ -394,117 +492,154 @@ export default function AdminDashboardClient() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto rounded-xl border border-border/60">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Branch Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Created</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                {branchChiefs.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {branchChiefs.map((chief) => (
-                      <TableRow key={chief.id} className="hover:bg-muted/40">
-                        <TableCell className="font-medium">{chief.branch_name}</TableCell>
-                        <TableCell>{chief.email}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            chief.is_active 
-                              ? 'bg-green-100 text-green-800' 
+                      <div
+                        key={chief.id}
+                        className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm transition-colors hover:bg-muted/30"
+                      >
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            {chief.photo_url ? (
+                              <img
+                                src={chief.photo_url}
+                                alt={chief.full_name || chief.branch_name}
+                                className="h-12 w-12 rounded-full border border-border object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                                <Users className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="text-sm font-semibold leading-tight">{chief.full_name || chief.branch_name}</p>
+                              <p className="text-xs text-muted-foreground">{chief.branch_name}</p>
+                              <p className="text-[11px] text-muted-foreground">{chief.email}</p>
+                            </div>
+                          </div>
+                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                            chief.is_active
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
                           }`}>
                             {chief.is_active ? 'Active' : 'Inactive'}
                           </span>
-                        </TableCell>
-                        <TableCell>{new Date(chief.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleToggleActive(chief.id, chief.is_active)}
-                              title={chief.is_active ? 'Deactivate' : 'Activate'}
-                            >
-                              {chief.is_active ? (
-                                <ToggleRight className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <ToggleLeft className="h-4 w-4 text-muted-foreground" />
-                              )}
-                            </Button>
-                            <Dialog open={editBranchChiefId === chief.id} onOpenChange={(open) => !open && setEditBranchChiefId(null)}>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => openEditBranchChief(chief)}
-                                  title="Edit Branch Chief/Official Dojo Operator"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent>
-                                <DialogHeader>
-                                  <DialogTitle>Edit Branch Chief/Official Dojo Operator</DialogTitle>
-                                  <DialogDescription>
-                                    Update Branch Chief/Official Dojo Operator details for {chief.branch_name}
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <div className="space-y-4">
-                                  <div className="space-y-2">
-                                    <Label htmlFor="editBranchName">Branch Chief/Official Dojo Operator Branch Name</Label>
+                        </div>
+
+                        <div className="mb-3 grid grid-cols-2 gap-3 text-sm">
+                          <div className="rounded-lg bg-muted/40 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Role</p>
+                            <p className="font-medium">{chief.operator_role || '-'}</p>
+                          </div>
+                          <div className="rounded-lg bg-muted/40 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Card Number</p>
+                            <p className="font-medium break-all">{chief.branch_chief_card_number || '-'}</p>
+                          </div>
+                          <div className="rounded-lg bg-muted/40 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Phone</p>
+                            <p className="font-medium">{chief.phone || '-'}</p>
+                          </div>
+                          <div className="rounded-lg bg-muted/40 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Country</p>
+                            <p className="font-medium">{chief.country || '-'}</p>
+                          </div>
+                          <div className="col-span-2 rounded-lg bg-muted/40 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Intl. Reg. No.</p>
+                            <p className="font-medium break-all">{chief.international_registration_number || '-'}</p>
+                          </div>
+                          <div className="col-span-2 rounded-lg bg-muted/40 px-3 py-2">
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Address</p>
+                            <p className="font-medium">{chief.address || '-'}</p>
+                          </div>
+                        </div>
+
+                        <div className="mb-3 text-[11px] text-muted-foreground">
+                          <p>Account Created: {new Date(chief.created_at).toLocaleDateString()}</p>
+                          <p>
+                            Form Updated: {chief.detail_updated_at ? new Date(chief.detail_updated_at).toLocaleDateString() : 'Not submitted yet'}
+                          </p>
+                        </div>
+
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleActive(chief.id, chief.is_active)}
+                            title={chief.is_active ? 'Deactivate' : 'Activate'}
+                          >
+                            {chief.is_active ? (
+                              <ToggleRight className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <ToggleLeft className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </Button>
+                          <Dialog open={editBranchChiefId === chief.id} onOpenChange={(open) => !open && setEditBranchChiefId(null)}>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openEditBranchChief(chief)}
+                                title="Edit Branch Chief/Official Dojo Operator"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Edit Branch Chief/Official Dojo Operator</DialogTitle>
+                                <DialogDescription>
+                                  Update Branch Chief/Official Dojo Operator details for {chief.branch_name}
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="editBranchName">Branch Chief/Official Dojo Operator Branch Name</Label>
+                                  <Input
+                                    id="editBranchName"
+                                    value={editBranchName}
+                                    onChange={(e) => setEditBranchName(e.target.value)}
+                                    required
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="editEmail">Email Username</Label>
+                                  <div className="flex items-center gap-0 overflow-hidden rounded-md border border-input">
                                     <Input
-                                      id="editBranchName"
-                                      value={editBranchName}
-                                      onChange={(e) => setEditBranchName(e.target.value)}
+                                      id="editEmail"
+                                      type="text"
+                                      value={editEmail}
+                                      onChange={(e) => setEditEmail(e.target.value.split('@')[0])}
+                                      className="border-0 focus:ring-0"
                                       required
                                     />
+                                    <span className="whitespace-nowrap bg-muted px-3 py-2 font-medium text-muted-foreground">@kyokushinbd.com</span>
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label htmlFor="editEmail">Email Username</Label>
-                                    <div className="flex items-center gap-0 overflow-hidden rounded-md border border-input">
-                                      <Input
-                                        id="editEmail"
-                                        type="text"
-                                        value={editEmail}
-                                        onChange={(e) => setEditEmail(e.target.value.split('@')[0])}
-                                        className="border-0 focus:ring-0"
-                                        required
-                                      />
-                                      <span className="whitespace-nowrap bg-muted px-3 py-2 font-medium text-muted-foreground">@kyokushinbd.com</span>
-                                    </div>
-                                  </div>
-                                  <Button onClick={() => handleEditBranchChief(chief.id)} className="w-full" disabled={editing}>
-                                    {editing ? 'Saving...' : 'Save Changes'}
-                                  </Button>
                                 </div>
-                              </DialogContent>
-                            </Dialog>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteBranchChief(chief.id)}
-                              title="Delete"
-                              className="text-destructive hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                                <Button onClick={() => handleEditBranchChief(chief.id)} className="w-full" disabled={editing}>
+                                  {editing ? 'Saving...' : 'Save Changes'}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteBranchChief(chief.id)}
+                            title="Delete"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                    {branchChiefs.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          No Branch Chief/Official Dojo Operator accounts registered yet
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-                </div>
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-muted-foreground">
+                    No Branch Chief/Official Dojo Operator accounts registered yet
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -552,28 +687,15 @@ export default function AdminDashboardClient() {
                             </div>
                           </div>
                           <div className="flex items-center gap-1">
-                            {fighter.photo_url && (
-                              <Button variant="ghost" size="sm" asChild>
-                                <a
-                                  href={fighter.photo_url}
-                                  download={`fighter-${fighter.id}-photo`}
-                                  aria-label={`Download photo of ${fighter.full_name}`}
-                                >
-                                  <Download className="h-4 w-4" />
-                                </a>
-                              </Button>
-                            )}
-                            {fighter.passport_image_url && (
-                              <Button variant="ghost" size="sm" asChild>
-                                <a
-                                  href={fighter.passport_image_url}
-                                  download={`fighter-${fighter.id}-passport`}
-                                  aria-label={`Download passport image of ${fighter.full_name}`}
-                                >
-                                  <span className="text-xs">P</span>
-                                </a>
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDownloadFighterImagesZip(fighter)}
+                              disabled={downloadingZipFor === fighter.id || (!fighter.photo_url && !fighter.passport_image_url)}
+                              title="Download fighter and passport images as ZIP"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="ghost"
                               size="sm"

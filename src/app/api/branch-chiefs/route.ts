@@ -14,14 +14,37 @@ export async function GET() {
 
     const branchChiefs = await sql`
       SELECT
-        id,
-        "branchName" AS branch_name,
-        email,
-        "isActive" AS is_active,
-        "createdAt" AS created_at,
-        "updatedAt" AS updated_at
-      FROM branch_chiefs
-      ORDER BY "createdAt" DESC
+        bc.id,
+        bc."branchName" AS branch_name,
+        bc.email,
+        bc."isActive" AS is_active,
+        bc."createdAt" AS created_at,
+        bc."updatedAt" AS updated_at,
+        d.id AS detail_id,
+        d."fullName" AS full_name,
+        d."operatorRole" AS operator_role,
+        d.address,
+        d."branchChiefCardNumber" AS branch_chief_card_number,
+        d.country,
+        d.phone,
+        d.email AS detail_email,
+        d."internationalRegistrationNumber" AS international_registration_number,
+        d."trainingSeminar" AS training_seminar,
+        d."danTestParticipation" AS dan_test_participation,
+        d."danTestQualificationNumber" AS dan_test_qualification_number,
+        d."photoUrl" AS photo_url,
+        d."passportImageUrl" AS passport_image_url,
+        d."createdAt" AS detail_created_at,
+        d."updatedAt" AS detail_updated_at
+      FROM branch_chiefs bc
+      LEFT JOIN LATERAL (
+        SELECT *
+        FROM branch_chief_details d
+        WHERE d."branchChiefId" = bc.id
+        ORDER BY d."createdAt" DESC
+        LIMIT 1
+      ) d ON TRUE
+      ORDER BY bc."createdAt" DESC
     `;
 
     return NextResponse.json({ branchChiefs });
