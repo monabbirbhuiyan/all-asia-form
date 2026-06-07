@@ -15,6 +15,7 @@ import {
   ToggleRight,
   Sparkles,
   Pencil,
+  Mail,
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface BranchChief {
   id: number;
@@ -92,21 +94,18 @@ export default function AdminDashboardClient() {
   const router = useRouter();
   const [branchChiefs, setBranchChiefs] = useState<BranchChief[]>([]);
   const [fighters, setFighters] = useState<Fighter[]>([]);
-  const [downloadingZipFor, setDownloadingZipFor] = useState<number | null>(
-    null,
-  );
+  const [downloadingZipFor, setDownloadingZipFor] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedChiefs, setSelectedChiefs] = useState<Set<number>>(new Set());
+  const [sendingEmails, setSendingEmails] = useState(false);
 
-  // New branch chief form
   const [newBranchName, setNewBranchName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newContactEmail, setNewContactEmail] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
 
-  const [editBranchChiefId, setEditBranchChiefId] = useState<number | null>(
-    null,
-  );
+  const [editBranchChiefId, setEditBranchChiefId] = useState<number | null>(null);
   const [editBranchName, setEditBranchName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editContactEmail, setEditContactEmail] = useState("");
@@ -276,7 +275,7 @@ export default function AdminDashboardClient() {
         fetchData();
       }
     } catch (error) {
-      console.error("Delete error:", error);
+      console.error("Delete branch chief error:", error);
     }
   };
 
@@ -295,6 +294,71 @@ export default function AdminDashboardClient() {
 
   const exportCSV = (type: string) => {
     window.open(`/api/export?type=${type}`, "_blank");
+  };
+
+  const toggleChiefSelection = (id: number) => {
+    setSelectedChiefs((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedChiefs.size === branchChiefs.length) {
+      setSelectedChiefs(new Set());
+    } else {
+      setSelectedChiefs(new Set(branchChiefs.map((c) => c.id)));
+    }
+  };
+
+  const handleSendCredentials = async () => {
+    if (selectedChiefs.size === 0) {
+      notify(
+        "No recipients selected",
+        "Please select at least one Branch Chief to send credentials.",
+        "destructive",
+      );
+      return;
+    }
+
+    setSendingEmails(true);
+    try {
+      const res = await fetch("/api/send-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chiefIds: Array.from(selectedChiefs) }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        notify(
+          "Emails sent successfully",
+          `Sent to ${data.sent} recipient(s).${data.failed > 0 ? ` Failed: ${data.failed}.` : ""}`,
+        );
+        setSelectedChiefs(new Set());
+      } else {
+        notify(
+          "Failed to send emails",
+          data.error || "Please try again.",
+          "destructive",
+        );
+      }
+    } catch (error) {
+      console.error("Send credentials error:", error);
+      notify(
+        "Failed to send emails",
+        "Please try again.",
+        "destructive",
+      );
+    } finally {
+      setSendingEmails(false);
+    }
   };
 
   const sanitizeFileName = (value: string) =>
@@ -607,6 +671,18 @@ export default function AdminDashboardClient() {
                     <Download className="mr-2 h-4 w-4" />
                     Export CSV
                   </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={handleSendCredentials}
+                    disabled={selectedChiefs.size === 0 || sendingEmails}
+                  >
+                    <Mail className="mr-2 h-4 w-4" />
+                    {sendingEmails
+                      ? "Sending..."
+                      : `Send Credentials (${selectedChiefs.size})`}
+                  </Button>
                   <Dialog
                     open={createDialogOpen}
                     onOpenChange={setCreateDialogOpen}
@@ -674,7 +750,9 @@ export default function AdminDashboardClient() {
                             type="email"
                             placeholder="Enter Branch Chief/Dojo operator email"
                             value={newContactEmail}
-                            onChange={(e) => setNewContactEmail(e.target.value)}
+                            onChange={(e) =>
+                              setNewContactEmail(e.target.value)
+                            }
                           />
                         </div>
                         <div className="space-y-2">
@@ -700,26 +778,40 @@ export default function AdminDashboardClient() {
                 </div>
               </CardHeader>
               <CardContent>
+                {branchChiefs.length > 0 && (
+                  <div className="mb-4 flex items-center gap-2">
+                    <Checkbox
+                      id="select-all"
+                      checked={
+                        selectedChiefs.size === branchChiefs.length &&
+                        branchChiefs.length > 0
+                      }
+                      onChange={toggleSelectAll}
+                    />
+                    <Label htmlFor="select-all" className="text-sm font-medium cursor-pointer">
+                      Select All
+                    </Label>
+                  </div>
+                )}
                 {branchChiefs.length > 0 ? (
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {branchChiefs.map((chief) => (
                       <div
                         key={chief.id}
-                        className="rounded-2xl border border-border/60 bg-background/70 p-4 shadow-sm transition-colors hover:bg-muted/30"
+                        className={`rounded-2xl border p-4 shadow-sm transition-colors ${
+                          selectedChiefs.has(chief.id)
+                            ? "border-primary bg-primary/5"
+                            : "border-border/60 bg-background/70 hover:bg-muted/30"
+                        }`}
                       >
                         <div className="mb-4 flex items-start justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            {chief.photo_url ? (
-                              <img
-                                src={chief.photo_url}
-                                alt={chief.full_name || chief.branch_name}
-                                className="h-12 w-12 rounded-full border border-border object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                                <Users className="h-5 w-5 text-muted-foreground" />
-                              </div>
-                            )}
+                      <Checkbox
+                        checked={selectedChiefs.has(chief.id)}
+                        onChange={() =>
+                          toggleChiefSelection(chief.id)
+                        }
+                      />
                             <div>
                               <p className="text-sm font-semibold leading-tight">
                                 {chief.full_name || chief.branch_name}

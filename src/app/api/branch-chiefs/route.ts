@@ -45,7 +45,7 @@ export async function GET() {
         ORDER BY d."createdAt" DESC
         LIMIT 1
       ) d ON TRUE
-      ORDER BY bc."createdAt" DESC
+       ORDER BY bc.id ASC
     `;
 
     return NextResponse.json({ branchChiefs });
