@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         id,
         "branchName" AS branch_name,
         email,
-        "contactEmail" AS contact_email,
+        "fullEmail" AS email,
         "isActive" AS is_active,
         "createdAt" AS created_at
     `;
